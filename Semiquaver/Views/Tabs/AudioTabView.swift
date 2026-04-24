@@ -196,6 +196,7 @@ struct AudioTabView: View {
         ForEach(songs) { track in
             Button {
                 player.togglePlayback(for: track)
+                showNowPlayingFullScreen = true
             } label: {
                 MediaRow(
                     item: track.mediaItem(

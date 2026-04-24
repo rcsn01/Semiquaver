@@ -4,6 +4,7 @@ struct NowPlayingView: View {
     let track: AudioTrack
     @ObservedObject var player: AudioPlayerController
     @Environment(\.dismiss) private var dismiss
+    @State private var dragOffset: CGFloat = 0
 
     private var artworkImage: UIImage? {
         if let data = track.artworkData {
@@ -36,6 +37,32 @@ struct NowPlayingView: View {
             }
         }
         .presentationBackground(.clear)
+        .offset(y: dragOffset)
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    let translation = value.translation.height
+                    if translation > 0 {
+                        dragOffset = translation
+                    }
+                }
+                .onEnded { value in
+                    let translation = value.translation.height
+                    let velocity = value.predictedEndTranslation.height
+                    if translation > 120 || velocity > 200 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            dragOffset = UIScreen.main.bounds.height
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            dismiss()
+                        }
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            dragOffset = 0
+                        }
+                    }
+                }
+        )
     }
 
     // MARK: - Subviews
