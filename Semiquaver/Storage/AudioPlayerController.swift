@@ -69,6 +69,18 @@ final class AudioPlayerController: NSObject, ObservableObject {
         updateNowPlayingInfo()
     }
 
+    func stop() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        currentTrack = nil
+        isPlaying = false
+        currentTime = 0
+        duration = 0
+        stopProgressTimer()
+        updateNowPlayingInfo()
+        updateRemoteCommandAvailability()
+    }
+
     func resume() {
         guard let audioPlayer else { return }
         audioPlayer.play()
