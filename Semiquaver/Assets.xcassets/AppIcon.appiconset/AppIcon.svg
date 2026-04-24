@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a1f"/>
+      <stop offset="100%" stop-color="#0d0d10"/>
+    </linearGradient>
+    <linearGradient id="noteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4444"/>
+      <stop offset="100%" stop-color="#cc0000"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="230" ry="230" fill="url(#bgGrad)"/>
+
+  <!-- Subtle inner border -->
+  <rect x="12" y="12" width="1000" height="1000" rx="218" ry="218" fill="none" stroke="#ff4444" stroke-width="4" opacity="0.15"/>
+
+  <!-- Semiquaver (16th note) — centered on bounding box -->
+  <g transform="translate(512, 512) scale(1.35) translate(-260, -340)">
+    <!-- Note head (filled oval, angled) -->
+    <ellipse cx="180" cy="520" rx="80" ry="58" fill="url(#noteGrad)" transform="rotate(-22 180 520)"/>
+
+    <!-- Stem -->
+    <rect x="248" y="100" width="20" height="425" rx="10" fill="url(#noteGrad)"/>
+
+    <!-- First flag (upper) — skinny, tapering tail -->
+    <path d="M 268 140
+             C 340 150, 400 180, 430 240
+             C 440 270, 435 300, 420 320
+             C 400 280, 350 250, 268 220
+             Z" fill="url(#noteGrad)"/>
+
+    <!-- Second flag (lower) — skinny, tapering tail -->
+    <path d="M 268 260
+             C 340 270, 400 300, 430 360
+             C 440 390, 435 420, 420 440
+             C 400 400, 350 370, 268 340
+             Z" fill="url(#noteGrad)"/>
+
+    <!-- Highlight on note head -->
+    <ellipse cx="162" cy="502" rx="32" ry="22" fill="#ffffff" opacity="0.25" transform="rotate(-22 162 502)"/>
+  </g>
+</svg>

@@ -66,7 +66,7 @@ final class AppMusicLibrary: ObservableObject {
             .sorted { Self.sortTitles($0.title, $1.title) }
     }
 
-    func reload() async {
+    func reload(force: Bool = false) async {
         guard let musicFolderURL = AppMusicDirectory.ensureExists() else {
             tracks = []
             errorMessage = "Semiquaver couldn't access its Music folder."
@@ -76,17 +76,127 @@ final class AppMusicLibrary: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        let scannedTracks = await Task.detached(priority: .userInitiated) {
-            await Self.scanTracks(in: musicFolderURL)
-        }.value
+        if !force, let cachedTracks = Self.loadCache() {
+            tracks = cachedTracks
+            isLoading = false
 
-        tracks = scannedTracks
-        isLoading = false
+            let updatedTracks = await Task.detached(priority: .userInitiated) {
+                await Self.incrementalScan(in: musicFolderURL, existingTracks: cachedTracks)
+            }.value
+
+            if !Self.isTrackListEqual(updatedTracks, tracks) {
+                tracks = updatedTracks
+                Self.saveCache(tracks: updatedTracks)
+            }
+        } else {
+            let scannedTracks = await Task.detached(priority: .userInitiated) {
+                await Self.scanTracks(in: musicFolderURL)
+            }.value
+
+            tracks = scannedTracks
+            isLoading = false
+            Self.saveCache(tracks: scannedTracks)
+        }
+    }
+
+    private nonisolated static func cacheURL() -> URL? {
+        let fileManager = FileManager.default
+        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return documentsURL.appendingPathComponent("library_cache.json")
+    }
+
+    private nonisolated static func loadCache() -> [AudioTrack]? {
+        guard let url = cacheURL(), FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+        do {
+            let data = try Data(contentsOf: url)
+            let tracks = try JSONDecoder().decode([AudioTrack].self, from: data)
+            return tracks
+        } catch {
+            print("Failed to load library cache: \(error)")
+            return nil
+        }
+    }
+
+    private nonisolated static func saveCache(tracks: [AudioTrack]) {
+        guard let url = cacheURL() else { return }
+        do {
+            let data = try JSONEncoder().encode(tracks)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            print("Failed to save library cache: \(error)")
+        }
+    }
+
+    private nonisolated static func incrementalScan(in directoryURL: URL, existingTracks: [AudioTrack]) async -> [AudioTrack] {
+        let fileManager = FileManager.default
+        let resourceKeys: [URLResourceKey] = [.isRegularFileKey, .contentModificationDateKey]
+        let supportedExtensions: Set<String> = [
+            "aac",
+            "aiff",
+            "alac",
+            "caf",
+            "flac",
+            "m4a",
+            "mp3",
+            "mp4",
+            "wav"
+        ]
+
+        guard let enumerator = fileManager.enumerator(
+            at: directoryURL,
+            includingPropertiesForKeys: resourceKeys,
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else {
+            return existingTracks
+        }
+
+        var trackByID = Dictionary(uniqueKeysWithValues: existingTracks.map { ($0.id, $0) })
+        var foundIDs = Set<String>()
+
+        while let fileURL = enumerator.nextObject() as? URL {
+            guard supportedExtensions.contains(fileURL.pathExtension.lowercased()) else {
+                continue
+            }
+
+            let resourceValues = try? fileURL.resourceValues(forKeys: Set(resourceKeys))
+            guard resourceValues?.isRegularFile == true else {
+                continue
+            }
+
+            let fileID = fileURL.path
+            foundIDs.insert(fileID)
+            let modDate = resourceValues?.contentModificationDate
+
+            if let existingTrack = trackByID[fileID], existingTrack.lastModified == modDate {
+                continue
+            }
+
+            if let track = await makeTrack(from: fileURL, lastModified: modDate) {
+                trackByID[fileID] = track
+            }
+        }
+
+        let staleIDs = Set(trackByID.keys).subtracting(foundIDs)
+        for staleID in staleIDs {
+            trackByID.removeValue(forKey: staleID)
+        }
+
+        return trackByID.values.sorted(by: sortTracks)
+    }
+
+    private nonisolated static func isTrackListEqual(_ lhs: [AudioTrack], _ rhs: [AudioTrack]) -> Bool {
+        let lhsIDs = lhs.map(\.id)
+        let rhsIDs = rhs.map(\.id)
+        return lhsIDs == rhsIDs
     }
 
     private nonisolated static func scanTracks(in directoryURL: URL) async -> [AudioTrack] {
         let fileManager = FileManager.default
-        let resourceKeys: [URLResourceKey] = [.isRegularFileKey]
+        let resourceKeys: [URLResourceKey] = [.isRegularFileKey, .contentModificationDateKey]
         let supportedExtensions: Set<String> = [
             "aac",
             "aiff",
@@ -119,7 +229,8 @@ final class AppMusicLibrary: ObservableObject {
                 continue
             }
 
-            if let track = await makeTrack(from: fileURL) {
+            let modDate = resourceValues?.contentModificationDate
+            if let track = await makeTrack(from: fileURL, lastModified: modDate) {
                 scannedTracks.append(track)
             }
         }
@@ -127,7 +238,7 @@ final class AppMusicLibrary: ObservableObject {
         return scannedTracks.sorted(by: sortTracks)
     }
 
-    private nonisolated static func makeTrack(from fileURL: URL) async -> AudioTrack? {
+    private nonisolated static func makeTrack(from fileURL: URL, lastModified: Date? = nil) async -> AudioTrack? {
         let asset = AVURLAsset(url: fileURL)
         let unknownArtist = "Unknown Artist"
         let unknownAlbum = "Unknown Album"
@@ -152,7 +263,8 @@ final class AppMusicLibrary: ObservableObject {
             album: album,
             genre: genre,
             duration: duration,
-            artworkData: artworkData
+            artworkData: artworkData,
+            lastModified: lastModified
         )
     }
 

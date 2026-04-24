@@ -66,7 +66,7 @@ enum AudioGroupKind: Sendable {
     case genre
 }
 
-struct AudioTrack: Identifiable, Hashable, Sendable {
+struct AudioTrack: Identifiable, Hashable, Sendable, Codable {
     let id: String
     let fileURL: URL
     let title: String
@@ -75,6 +75,7 @@ struct AudioTrack: Identifiable, Hashable, Sendable {
     let genre: String
     let duration: TimeInterval
     let artworkData: Data?
+    let lastModified: Date?
 
     var detailText: String {
         let parts = [
