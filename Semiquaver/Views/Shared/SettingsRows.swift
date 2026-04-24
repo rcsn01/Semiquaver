@@ -6,13 +6,15 @@ struct SettingsLinkRow: View {
     var showsInfo = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .font(.bodyMedium())
+                    .foregroundStyle(Color.playerTextPrimary)
+                
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .font(.caption())
                         .foregroundStyle(Color.playerTextSecondary)
                 }
             }
@@ -21,17 +23,17 @@ struct SettingsLinkRow: View {
 
             if showsInfo {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 22))
+                    .font(.system(size: 16))
                     .foregroundStyle(Color.playerAccent)
-                    .padding(.trailing, 10)
+                    .padding(.trailing, 4)
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.playerMuted)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color.playerTextTertiary)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 12)
     }
 }
 
@@ -41,13 +43,15 @@ struct SettingsToggleRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .font(.bodyMedium())
+                    .foregroundStyle(Color.playerTextPrimary)
+                
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .font(.caption())
                         .foregroundStyle(Color.playerTextSecondary)
                 }
             }
@@ -59,6 +63,6 @@ struct SettingsToggleRow: View {
                 .tint(Color.playerAccent)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 12)
     }
 }

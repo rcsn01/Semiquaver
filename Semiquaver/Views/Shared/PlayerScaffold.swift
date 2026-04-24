@@ -12,39 +12,51 @@ struct PlayerScaffold<Content: View>: View {
 
             VStack(spacing: 0) {
                 header
-                Divider()
-                    .overlay(Color.playerDivider)
+                
                 content()
             }
         }
     }
 
     private var header: some View {
-        ZStack {
+        HStack(spacing: 12) {
             Text(title)
-                .font(.system(size: 43, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.white)
-
-            HStack {
-                Spacer()
-                if let trailingSystemImage {
-                    if let trailingAction {
-                        Button(action: trailingAction) {
-                            Image(systemName: trailingSystemImage)
-                                .font(.system(size: 30, weight: .semibold))
-                                .foregroundStyle(Color.playerAccent)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
+                .font(.display())
+                .foregroundStyle(Color.playerTextPrimary)
+            
+            Spacer()
+            
+            if let trailingSystemImage {
+                if let trailingAction {
+                    Button(action: trailingAction) {
                         Image(systemName: trailingSystemImage)
-                            .font(.system(size: 30, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Color.playerAccent)
+                            .frame(width: 40, height: 40)
+                            .background(Color.playerGlass)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
+                    .buttonStyle(PressScaleButtonStyle())
+                } else {
+                    Image(systemName: trailingSystemImage)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.playerAccent)
+                        .frame(width: 40, height: 40)
+                        .background(Color.playerGlass)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
-            .padding(.trailing, 18)
         }
-        .padding(.top, 10)
-        .padding(.bottom, 14)
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 16)
     }
 }

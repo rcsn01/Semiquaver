@@ -19,7 +19,8 @@ final class AppMusicLibrary: ObservableObject {
                     id: "artist::\(artist)",
                     title: artist,
                     subtitle: Self.songCountLabel(groupedTracks.count),
-                    kind: .artist
+                    kind: .artist,
+                    artworkData: groupedTracks.first?.artworkData
                 )
             }
             .sorted { Self.sortTitles($0.title, $1.title) }
@@ -44,7 +45,8 @@ final class AppMusicLibrary: ObservableObject {
                 id: "album::\(firstTrack.artist)::\(firstTrack.album)",
                 title: firstTrack.album,
                 subtitle: subtitleParts.joined(separator: " • "),
-                kind: .album
+                kind: .album,
+                artworkData: firstTrack.artworkData
             )
         }
         .sorted { Self.sortTitles($0.title, $1.title) }
@@ -57,7 +59,8 @@ final class AppMusicLibrary: ObservableObject {
                     id: "genre::\(genre)",
                     title: genre,
                     subtitle: Self.songCountLabel(groupedTracks.count),
-                    kind: .genre
+                    kind: .genre,
+                    artworkData: groupedTracks.first?.artworkData
                 )
             }
             .sorted { Self.sortTitles($0.title, $1.title) }
@@ -139,6 +142,8 @@ final class AppMusicLibrary: ObservableObject {
         let seconds = durationTime.map(CMTimeGetSeconds) ?? 0
         let duration = seconds.isFinite ? max(seconds, 0) : 0
 
+        let artworkData = await extractArtworkData(from: metadata)
+
         return AudioTrack(
             id: fileURL.path,
             fileURL: fileURL,
@@ -146,8 +151,25 @@ final class AppMusicLibrary: ObservableObject {
             artist: artist,
             album: album,
             genre: genre,
-            duration: duration
+            duration: duration,
+            artworkData: artworkData
         )
+    }
+
+    private nonisolated static func extractArtworkData(from metadata: [AVMetadataItem]) async -> Data? {
+        for item in metadata {
+            let descriptors = metadataDescriptors(for: item)
+            let isArtwork = descriptors.contains { descriptor in
+                descriptor.contains("artwork") || descriptor.contains("image") || descriptor.contains("picture")
+            }
+
+            guard isArtwork else { continue }
+
+            if let dataValue = try? await item.load(.dataValue), !dataValue.isEmpty {
+                return dataValue
+            }
+        }
+        return nil
     }
 
     private nonisolated static func allMetadata(from asset: AVURLAsset) async -> [AVMetadataItem] {
