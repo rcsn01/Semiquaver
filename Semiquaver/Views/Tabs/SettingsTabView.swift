@@ -1,10 +1,12 @@
 import SwiftUI
+import UIKit
 
 struct SettingsTabView: View {
     @State private var playVideoFullscreen = true
     @State private var enableTextScrolling = false
     @State private var rememberPlayerState = true
     @State private var restoreLastPlayedMedia = false
+    @State private var showFilesOpenHelp = false
 
     var body: some View {
         ZStack {
@@ -62,6 +64,18 @@ struct SettingsTabView: View {
                             .font(.system(size: 44, weight: .bold, design: .rounded))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 18)
+
+                        Button {
+                            openLibraryInFiles()
+                        } label: {
+                            SettingsLinkRow(
+                                title: "View library in files",
+                                subtitle: "Open Files > On My iPhone > Semiquaver > Music"
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Divider().overlay(Color.playerDivider)
 
                         SettingsLinkRow(
                             title: "Default playback speed",
@@ -127,6 +141,12 @@ struct SettingsTabView: View {
                 }
             }
         }
+        .alert("Open Files to View Library", isPresented: $showFilesOpenHelp) {
+            Button("OK", role: .cancel) {
+            }
+        } message: {
+            Text("Open Files and go to On My iPhone > Semiquaver > Music.")
+        }
     }
 
     private var sectionGap: some View {
@@ -139,5 +159,25 @@ struct SettingsTabView: View {
             .overlay(alignment: .bottom) {
                 Divider().overlay(Color.playerDivider)
             }
+    }
+
+    private func openLibraryInFiles() {
+        guard AppMusicDirectory.ensureExists() != nil else {
+            showFilesOpenHelp = true
+            return
+        }
+
+        guard let filesRootURL = URL(string: "shareddocuments://") else {
+            showFilesOpenHelp = true
+            return
+        }
+
+        UIApplication.shared.open(filesRootURL, options: [:]) { success in
+            if !success {
+                DispatchQueue.main.async {
+                    showFilesOpenHelp = true
+                }
+            }
+        }
     }
 }
