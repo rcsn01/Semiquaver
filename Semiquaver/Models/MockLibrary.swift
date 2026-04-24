@@ -130,18 +130,18 @@ enum MockLibrary {
     static let playlists: [PlaylistItem] = [
         PlaylistItem(
             title: "Fav",
-            detail: "1 Track - 03:50",
-            colors: MediaArtworkPalette.colors(for: "playlist-1")
+            detail: "0 songs",
+            trackIDs: []
         ),
         PlaylistItem(
             title: "Roadtrip PM",
-            detail: "28 Tracks - 1:46:03",
-            colors: MediaArtworkPalette.colors(for: "playlist-2")
+            detail: "0 songs",
+            trackIDs: []
         ),
         PlaylistItem(
             title: "Coding Flow",
-            detail: "52 Tracks - 3:11:40",
-            colors: MediaArtworkPalette.colors(for: "playlist-3")
+            detail: "0 songs",
+            trackIDs: []
         )
     ]
 

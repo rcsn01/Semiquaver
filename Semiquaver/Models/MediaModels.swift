@@ -28,11 +28,22 @@ struct MediaItem: Identifiable {
     }
 }
 
-struct PlaylistItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let detail: String
-    let colors: [Color]
+struct PlaylistItem: Identifiable, Codable {
+    let id: UUID
+    var title: String
+    var detail: String
+    var trackIDs: [String]
+
+    init(id: UUID = UUID(), title: String, detail: String, trackIDs: [String] = []) {
+        self.id = id
+        self.title = title
+        self.detail = detail
+        self.trackIDs = trackIDs
+    }
+
+    var colors: [Color] {
+        MediaArtworkPalette.colors(for: id.uuidString)
+    }
 }
 
 struct BrowseTile: Identifiable {

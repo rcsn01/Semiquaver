@@ -4,7 +4,13 @@ struct NowPlayingView: View {
     let track: AudioTrack
     @ObservedObject var player: AudioPlayerController
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var playlistStorage = PlaylistStorage()
     @State private var dragOffset: CGFloat = 0
+    @State private var showActionSheet = false
+    @State private var showAddToPlaylistSheet = false
+    @State private var showRemoveFromPlaylistSheet = false
+    @State private var showDeleteConfirmation = false
+    @State private var errorMessage: String?
 
     private var artworkImage: UIImage? {
         if let data = track.artworkData {
@@ -63,6 +69,47 @@ struct NowPlayingView: View {
                     }
                 }
         )
+        .confirmationDialog("Track Options", isPresented: $showActionSheet, titleVisibility: .visible) {
+            Button("Add to Playlist") {
+                showAddToPlaylistSheet = true
+            }
+            if !playlistStorage.playlistsContaining(trackID: track.id).isEmpty {
+                Button("Remove from Playlist") {
+                    showRemoveFromPlaylistSheet = true
+                }
+            }
+            Button("Delete Song", role: .destructive) {
+                showDeleteConfirmation = true
+            }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $showAddToPlaylistSheet) {
+            PlaylistPickerSheet(
+                trackID: track.id,
+                playlistStorage: playlistStorage,
+                mode: .add
+            )
+        }
+        .sheet(isPresented: $showRemoveFromPlaylistSheet) {
+            PlaylistPickerSheet(
+                trackID: track.id,
+                playlistStorage: playlistStorage,
+                mode: .remove
+            )
+        }
+        .alert("Delete Song", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                deleteTrack()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \"\(track.title)\"? This will remove the file from your Music folder.")
+        }
+        .alert("Error", isPresented: .init(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     // MARK: - Subviews
@@ -95,10 +142,21 @@ struct NowPlayingView: View {
 
             Spacer()
 
-            // Invisible spacer to balance layout
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.clear)
-                .frame(width: 44, height: 44)
+            Button {
+                showActionSheet = true
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Color.playerTextSecondary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.playerGlass)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(PressScaleButtonStyle())
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -290,5 +348,88 @@ struct NowPlayingView: View {
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func deleteTrack() {
+        do {
+            try FileManager.default.removeItem(at: track.fileURL)
+            // Remove from all playlists
+            for playlist in playlistStorage.playlistsContaining(trackID: track.id) {
+                playlistStorage.removeTrack(track.id, from: playlist)
+            }
+            // Stop playback if this is the current track
+            if player.currentTrack?.id == track.id {
+                player.stop()
+            }
+            dismiss()
+        } catch {
+            errorMessage = "Failed to delete song: \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Playlist Picker Sheet
+
+enum PlaylistPickerMode {
+    case add
+    case remove
+}
+
+struct PlaylistPickerSheet: View {
+    let trackID: String
+    @ObservedObject var playlistStorage: PlaylistStorage
+    let mode: PlaylistPickerMode
+    @Environment(\.dismiss) private var dismiss
+
+    private var relevantPlaylists: [PlaylistItem] {
+        switch mode {
+        case .add:
+            return playlistStorage.playlists.filter { !$0.trackIDs.contains(trackID) }
+        case .remove:
+            return playlistStorage.playlistsContaining(trackID: trackID)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.playerBackground.ignoresSafeArea()
+
+                List {
+                    ForEach(relevantPlaylists) { playlist in
+                        Button {
+                            switch mode {
+                            case .add:
+                                playlistStorage.addTrack(trackID, to: playlist)
+                            case .remove:
+                                playlistStorage.removeTrack(trackID, from: playlist)
+                            }
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Text(playlist.title)
+                                    .foregroundStyle(Color.playerTextPrimary)
+                                Spacer()
+                                Text(playlist.detail)
+                                    .foregroundStyle(Color.playerTextSecondary)
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle(mode == .add ? "Add to Playlist" : "Remove from Playlist")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundStyle(Color.playerAccent)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
     }
 }

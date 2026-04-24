@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct PlaylistsTabView: View {
+    @StateObject private var playlistStorage = PlaylistStorage()
     @State private var showingCreatePlaylist = false
+    @State private var newPlaylistTitle = ""
 
     var body: some View {
         PlayerScaffold(
@@ -11,7 +13,7 @@ struct PlaylistsTabView: View {
         ) {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    ForEach(MockLibrary.playlists) { playlist in
+                    ForEach(playlistStorage.playlists) { playlist in
                         Button {
                             // TODO: Navigate to playlist detail
                         } label: {
@@ -20,7 +22,7 @@ struct PlaylistsTabView: View {
                         }
                         .buttonStyle(PressScaleButtonStyle())
 
-                        if playlist.id != MockLibrary.playlists.last?.id {
+                        if playlist.id != playlistStorage.playlists.last?.id {
                             Divider()
                                 .overlay(Color.playerDivider)
                                 .padding(.leading, 76)
@@ -31,6 +33,19 @@ struct PlaylistsTabView: View {
                 .padding(.bottom, 32)
                 .padding(.horizontal, 12)
             }
+        }
+        .alert("New Playlist", isPresented: $showingCreatePlaylist) {
+            TextField("Playlist Name", text: $newPlaylistTitle)
+            Button("Create") {
+                guard !newPlaylistTitle.isEmpty else { return }
+                playlistStorage.createPlaylist(title: newPlaylistTitle)
+                newPlaylistTitle = ""
+            }
+            Button("Cancel", role: .cancel) {
+                newPlaylistTitle = ""
+            }
+        } message: {
+            Text("Enter a name for your new playlist.")
         }
     }
 }
