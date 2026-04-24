@@ -8,28 +8,16 @@ struct MediaRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: item.colors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 58, height: 58)
-                .overlay {
-                    Image(systemName: item.icon)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(Color.white.opacity(0.85))
-                }
+            artworkView
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .font(.bodyMedium())
+                    .foregroundStyle(Color.playerTextPrimary)
                     .lineLimit(1)
 
                 Text(item.subtitle)
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .font(.caption())
                     .foregroundStyle(Color.playerTextSecondary)
                     .lineLimit(1)
             }
@@ -38,16 +26,48 @@ struct MediaRow: View {
 
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
-                    .font(.system(size: 21, weight: .bold))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color.playerAccent)
+                    .frame(width: 28, height: 28)
             } else if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(Color.playerAccent)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.playerTextTertiary)
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(isHighlighted ? Color.playerAccent.opacity(0.10) : Color.clear)
+        .padding(.vertical, 8)
+        .background(isHighlighted ? Color.playerAccent.opacity(0.06) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var artworkView: some View {
+        if let artwork = item.artwork {
+            Image(uiImage: artwork)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 52, height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .modifier(GlowModifier(color: Color.clear, radius: 0))
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: item.colors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 52, height: 52)
+                    .modifier(GlowModifier(color: item.colors.first ?? .clear, radius: 12))
+
+                Image(systemName: item.icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.white)
+                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+            }
+        }
     }
 }

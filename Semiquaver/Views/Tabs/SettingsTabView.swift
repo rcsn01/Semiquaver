@@ -13,67 +13,37 @@ struct SettingsTabView: View {
             PlayerBackground()
 
             VStack(spacing: 0) {
-                HStack {
-                    Button("About") {}
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.playerAccent)
-
-                    Spacer()
-
-                    Text("Settings")
-                        .font(.system(size: 43, weight: .semibold, design: .rounded))
-
-                    Spacer()
-
-                    Button("Documentation") {}
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.playerAccent)
-                }
-                .font(.system(size: 17, weight: .medium, design: .rounded))
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-                .padding(.bottom, 16)
-
-                Divider()
-                    .overlay(Color.playerDivider)
+                header
 
                 ScrollView(showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 0) {
+                        sectionHeader("Appearance")
+                        
                         SettingsLinkRow(
-                            title: "Privacy",
-                            subtitle: "Open in Settings"
+                            title: "Theme",
+                            subtitle: "Automatic"
                         )
 
                         Divider().overlay(Color.playerDivider)
 
-                        SettingsLinkRow(
-                            title: "Appearance",
-                            subtitle: "Automatic"
-                        )
-
                         sectionGap
 
+                        sectionHeader("Support")
+
                         SettingsLinkRow(
-                            title: "Make a Donation to VideoLAN",
+                            title: "Make a Donation",
                             subtitle: "Support free and open source multimedia"
                         )
 
                         sectionGap
 
-                        Text("Generic")
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 18)
+                        sectionHeader("Playback")
 
-                        Button {
-                            openLibraryInFiles()
-                        } label: {
-                            SettingsLinkRow(
-                                title: "View library in files",
-                                subtitle: "Open Files > On My iPhone > Semiquaver > Music"
-                            )
-                        }
-                        .buttonStyle(.plain)
+                        SettingsToggleRow(
+                            title: "Play video fullscreen",
+                            subtitle: nil,
+                            isOn: $playVideoFullscreen
+                        )
 
                         Divider().overlay(Color.playerDivider)
 
@@ -84,57 +54,39 @@ struct SettingsTabView: View {
 
                         Divider().overlay(Color.playerDivider)
 
-                        SettingsLinkRow(
-                            title: "Continue audio playback",
-                            subtitle: "Always",
-                            showsInfo: true
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
                         SettingsToggleRow(
-                            title: "Play video in fullscreen",
-                            subtitle: nil,
-                            isOn: $playVideoFullscreen
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsLinkRow(
-                            title: "Continue video playback",
-                            subtitle: "Always",
-                            showsInfo: true
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsLinkRow(
-                            title: "Automatically play next item",
-                            subtitle: nil
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsToggleRow(
-                            title: "Enable text scrolling in media list",
-                            subtitle: nil,
-                            isOn: $enableTextScrolling
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsToggleRow(
-                            title: "Remember player state (shuffle, loop)",
-                            subtitle: nil,
+                            title: "Remember player state",
+                            subtitle: "Shuffle and loop settings",
                             isOn: $rememberPlayerState
                         )
 
                         Divider().overlay(Color.playerDivider)
 
                         SettingsToggleRow(
-                            title: "Restore last played media on launch",
-                            subtitle: "Not applicable to externally stored media",
+                            title: "Restore last played media",
+                            subtitle: "On app launch",
                             isOn: $restoreLastPlayedMedia
+                        )
+
+                        sectionGap
+
+                        sectionHeader("Library")
+
+                        Button {
+                            openLibraryInFiles()
+                        } label: {
+                            SettingsLinkRow(
+                                title: "Open library in Files",
+                                subtitle: "On My iPhone > Semiquaver > Music"
+                            )
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+
+                        Divider().overlay(Color.playerDivider)
+
+                        SettingsLinkRow(
+                            title: "Privacy Policy",
+                            subtitle: nil
                         )
                     }
                     .padding(.bottom, 32)
@@ -142,23 +94,40 @@ struct SettingsTabView: View {
             }
         }
         .alert("Open Files to View Library", isPresented: $showFilesOpenHelp) {
-            Button("OK", role: .cancel) {
-            }
+            Button("OK", role: .cancel) { }
         } message: {
             Text("Open Files and go to On My iPhone > Semiquaver > Music.")
         }
     }
 
+    private var header: some View {
+        HStack {
+            Spacer()
+            Text("Settings")
+                .font(.display())
+                .foregroundStyle(Color.playerTextPrimary)
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 16)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .foregroundStyle(Color.playerAccent)
+            .textCase(.uppercase)
+            .tracking(0.5)
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .padding(.bottom, 8)
+    }
+
     private var sectionGap: some View {
         Rectangle()
             .fill(Color.clear)
-            .frame(height: 26)
-            .overlay(alignment: .top) {
-                Divider().overlay(Color.playerDivider)
-            }
-            .overlay(alignment: .bottom) {
-                Divider().overlay(Color.playerDivider)
-            }
+            .frame(height: 16)
     }
 
     private func openLibraryInFiles() {

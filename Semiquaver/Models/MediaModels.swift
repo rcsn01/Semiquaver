@@ -1,4 +1,7 @@
 import SwiftUI
+import UIKit
+
+// MARK: - UI Models
 
 struct MediaItem: Identifiable {
     let id: String
@@ -6,13 +9,22 @@ struct MediaItem: Identifiable {
     let subtitle: String
     let icon: String
     let colors: [Color]
+    var artwork: UIImage? = nil
 
-    init(id: String = UUID().uuidString, title: String, subtitle: String, icon: String, colors: [Color]) {
+    init(
+        id: String = UUID().uuidString,
+        title: String,
+        subtitle: String,
+        icon: String,
+        colors: [Color],
+        artwork: UIImage? = nil
+    ) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.icon = icon
         self.colors = colors
+        self.artwork = artwork
     }
 }
 
@@ -28,6 +40,8 @@ struct BrowseTile: Identifiable {
     let title: String
     let colors: [Color]
 }
+
+// MARK: - Audio Domain Models
 
 enum AudioMetadataFallbacks {
     static let artist = "Unknown Artist"
@@ -49,6 +63,7 @@ struct AudioTrack: Identifiable, Hashable, Sendable {
     let album: String
     let genre: String
     let duration: TimeInterval
+    let artworkData: Data?
 
     var detailText: String {
         let parts = [
@@ -72,14 +87,20 @@ struct AudioTrack: Identifiable, Hashable, Sendable {
         let subtitleParts = [playbackState, detailText].compactMap { $0 }
         let subtitle = subtitleParts.joined(separator: " • ")
 
+        var artworkImage: UIImage?
+        if let artworkData {
+            artworkImage = UIImage(data: artworkData)
+        }
+
         return MediaItem(
             id: id,
             title: title,
             subtitle: subtitle.isEmpty ? durationText : subtitle,
-            icon: isCurrent && isPlaying ? "speaker.wave.2.fill" : "music.note",
+            icon: isCurrent && isPlaying ? "waveform" : "music.note",
             colors: isCurrent
-                ? [Color.playerAccent.opacity(0.95), Color.orange.opacity(0.65)]
-                : MediaArtworkPalette.colors(for: id)
+                ? [Color.playerAccent.opacity(0.85), Color.orange.opacity(0.55)]
+                : MediaArtworkPalette.colors(for: id),
+            artwork: artworkImage
         )
     }
 }
@@ -89,14 +110,21 @@ struct AudioGroupSummary: Identifiable, Hashable, Sendable {
     let title: String
     let subtitle: String
     let kind: AudioGroupKind
+    let artworkData: Data?
 
     var mediaItem: MediaItem {
-        MediaItem(
+        var artworkImage: UIImage?
+        if let artworkData {
+            artworkImage = UIImage(data: artworkData)
+        }
+
+        return MediaItem(
             id: id,
             title: title,
             subtitle: subtitle,
             icon: kind.systemImage,
-            colors: MediaArtworkPalette.colors(for: id)
+            colors: MediaArtworkPalette.colors(for: id),
+            artwork: artworkImage
         )
     }
 }
@@ -114,14 +142,42 @@ private extension AudioGroupKind {
     }
 }
 
+// MARK: - Artwork Palette
+
 enum MediaArtworkPalette {
+    /// A curated set of sophisticated, muted color pairings for cover-art-style thumbnails.
     private static let palettes: [[Color]] = [
-        [Color.playerAccent.opacity(0.85), Color.orange.opacity(0.60)],
-        [Color.blue.opacity(0.85), Color.indigo.opacity(0.72)],
-        [Color.teal.opacity(0.88), Color.mint.opacity(0.62)],
-        [Color.pink.opacity(0.82), Color.red.opacity(0.62)],
-        [Color.gray.opacity(0.86), Color.white.opacity(0.46)],
-        [Color.cyan.opacity(0.80), Color.blue.opacity(0.58)]
+        // Sunset – warm amber to muted rose
+        [Color(red: 0.90, green: 0.55, blue: 0.35),
+         Color(red: 0.75, green: 0.40, blue: 0.45)],
+
+        // Ocean – deep teal to slate
+        [Color(red: 0.25, green: 0.50, blue: 0.55),
+         Color(red: 0.15, green: 0.30, blue: 0.40)],
+
+        // Sage – soft green to dusty blue
+        [Color(red: 0.50, green: 0.60, blue: 0.50),
+         Color(red: 0.35, green: 0.45, blue: 0.55)],
+
+        // Berry – muted berry to deep plum
+        [Color(red: 0.60, green: 0.35, blue: 0.50),
+         Color(red: 0.40, green: 0.25, blue: 0.45)],
+
+        // Stone – warm grey to cool charcoal
+        [Color(red: 0.55, green: 0.55, blue: 0.55),
+         Color(red: 0.30, green: 0.30, blue: 0.35)],
+
+        // Dusk – soft violet to midnight blue
+        [Color(red: 0.45, green: 0.40, blue: 0.65),
+         Color(red: 0.20, green: 0.20, blue: 0.40)],
+
+        // Sand – beige to dusty rose
+        [Color(red: 0.75, green: 0.65, blue: 0.55),
+         Color(red: 0.60, green: 0.45, blue: 0.45)],
+
+        // Forest — deep olive to dark moss
+        [Color(red: 0.35, green: 0.40, blue: 0.30),
+         Color(red: 0.20, green: 0.25, blue: 0.20)]
     ]
 
     static func colors(for seed: String) -> [Color] {
@@ -132,6 +188,8 @@ enum MediaArtworkPalette {
         return palettes[index]
     }
 }
+
+// MARK: - Utilities
 
 private func formatAudioDuration(_ duration: TimeInterval) -> String {
     let totalSeconds = max(Int(duration.rounded()), 0)

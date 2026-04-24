@@ -12,7 +12,7 @@ struct ContentView: View {
         TabView {
             AudioTabView()
                 .tabItem {
-                    Label("Audio", systemImage: "music.note")
+                    Label("Library", systemImage: "music.note")
                 }
 
             PlaylistsTabView()
