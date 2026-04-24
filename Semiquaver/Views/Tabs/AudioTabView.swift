@@ -8,11 +8,10 @@ enum AudioCategory: String, CaseIterable {
 }
 
 struct AudioTabView: View {
-    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var library = AppMusicLibrary()
-    @StateObject private var player = AudioPlayerController()
+    @ObservedObject var player: AudioPlayerController
     @State private var selectedCategory: AudioCategory = .songs
-    @State private var showNowPlayingFullScreen = false
+    @Binding var showNowPlayingFullScreen: Bool
 
     var body: some View {
         ZStack {
@@ -28,22 +27,6 @@ struct AudioTabView: View {
 
                 content
             }
-
-            VStack {
-                Spacer()
-
-                if let currentTrack = player.currentTrack {
-                    Button {
-                        showNowPlayingFullScreen = true
-                    } label: {
-                        NowPlayingBar(track: currentTrack, player: player)
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                }
-            }
-            .ignoresSafeArea(.keyboard, edges: .bottom)
         }
         .task {
             await library.reload()
@@ -51,23 +34,9 @@ struct AudioTabView: View {
         .onChange(of: library.tracks) { _, newTracks in
             player.setLibrary(newTracks)
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                reloadLibrary()
-            }
-        }
-        .sheet(isPresented: $showNowPlayingFullScreen) {
-            if let currentTrack = player.currentTrack {
-                NowPlayingView(track: currentTrack, player: player)
-            }
-        }
-        .alert("Playback Error", isPresented: playbackErrorBinding) {
-            Button("OK", role: .cancel) {
-                player.clearError()
-            }
-        } message: {
-            Text(player.errorMessage ?? "")
-        }
+        // Reload on scene phase activation removed to avoid full rescans on every foreground.
+        // Library stays current via incremental background sync on next cold launch.
+        // Use the header refresh button for a forced rescan.
     }
 
     // MARK: - Header
@@ -172,7 +141,7 @@ struct AudioTabView: View {
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
-                .padding(.bottom, 68)
+                .padding(.bottom, 12)
             }
         }
     }
@@ -264,14 +233,14 @@ struct AudioTabView: View {
 
             Spacer()
         }
-        .padding(.bottom, 68)
+        .padding(.bottom, 24)
     }
 
     // MARK: - Helpers
 
     private func reloadLibrary() {
         Task {
-            await library.reload()
+            await library.reload(force: true)
         }
     }
 
@@ -282,14 +251,4 @@ struct AudioTabView: View {
         return "play.fill"
     }
 
-    private var playbackErrorBinding: Binding<Bool> {
-        Binding(
-            get: { player.errorMessage != nil },
-            set: { isPresented in
-                if !isPresented {
-                    player.clearError()
-                }
-            }
-        )
-    }
 }
