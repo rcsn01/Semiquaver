@@ -15,13 +15,22 @@ struct AudioTabView: View {
     @State private var showNowPlayingFullScreen = false
 
     var body: some View {
-        PlayerScaffold(
-            title: "Library",
-            trailingSystemImage: "arrow.clockwise",
-            trailingAction: reloadLibrary
-        ) {
+        ZStack {
+            PlayerBackground()
+
             VStack(spacing: 0) {
+                header
+
+                Divider()
+                    .overlay(Color.playerDivider)
+
                 categoryBar
+
+                content
+            }
+
+            VStack {
+                Spacer()
 
                 if let currentTrack = player.currentTrack {
                     Button {
@@ -31,11 +40,10 @@ struct AudioTabView: View {
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.bottom, 12)
                 }
-
-                content
             }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
         }
         .task {
             await library.reload()
@@ -61,6 +69,37 @@ struct AudioTabView: View {
             Text(player.errorMessage ?? "")
         }
     }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            Text("Library")
+                .font(.display())
+                .foregroundStyle(Color.playerTextPrimary)
+
+            Spacer()
+
+            Button(action: reloadLibrary) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.playerAccent)
+                    .frame(width: 40, height: 40)
+                    .background(Color.playerGlass)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 16)
+    }
+
+    // MARK: - Category Bar
 
     private var categoryBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -99,6 +138,8 @@ struct AudioTabView: View {
         .buttonStyle(PressScaleButtonStyle())
     }
 
+    // MARK: - Content
+
     @ViewBuilder
     private var content: some View {
         if library.isLoading && library.songs.isEmpty {
@@ -131,32 +172,12 @@ struct AudioTabView: View {
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
+                .padding(.bottom, 68)
             }
         }
     }
 
-    private var loadingState: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            ZStack {
-                Circle()
-                    .stroke(Color.playerGlassBorder, lineWidth: 3)
-                    .frame(width: 48, height: 48)
-                
-                ProgressView()
-                    .tint(Color.playerAccent)
-                    .scaleEffect(1.2)
-            }
-            
-            Text("Scanning your library...")
-                .font(.bodyRegular())
-                .foregroundStyle(Color.playerTextSecondary)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 24)
-    }
+    // MARK: - Rows
 
     private func summaryRows(for summaries: [AudioGroupSummary]) -> some View {
         ForEach(summaries) { summary in
@@ -196,28 +217,56 @@ struct AudioTabView: View {
         }
     }
 
+    // MARK: - States
+
+    private var loadingState: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .stroke(Color.playerGlassBorder, lineWidth: 3)
+                    .frame(width: 48, height: 48)
+
+                ProgressView()
+                    .tint(Color.playerAccent)
+                    .scaleEffect(1.2)
+            }
+
+            Text("Scanning your library...")
+                .font(.bodyRegular())
+                .foregroundStyle(Color.playerTextSecondary)
+
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+    }
+
     private func emptyState(title: String, message: String, systemImage: String) -> some View {
         VStack(spacing: 16) {
             Spacer()
-            
+
             Image(systemName: systemImage)
                 .font(.system(size: 56, weight: .light))
                 .foregroundStyle(Color.playerTextTertiary)
                 .padding(.bottom, 8)
-            
+
             Text(title)
                 .font(.heading())
                 .foregroundStyle(Color.playerTextPrimary)
-            
+
             Text(message)
                 .font(.bodyRegular())
                 .foregroundStyle(Color.playerTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-            
+
             Spacer()
         }
+        .padding(.bottom, 68)
     }
+
+    // MARK: - Helpers
 
     private func reloadLibrary() {
         Task {

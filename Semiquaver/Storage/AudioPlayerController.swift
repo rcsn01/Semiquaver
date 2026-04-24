@@ -1,6 +1,8 @@
 import AVFoundation
 import Combine
 import Foundation
+import MediaPlayer
+import SwiftUI
 
 enum RepeatMode: String, CaseIterable {
     case off = "off"
@@ -23,6 +25,22 @@ final class AudioPlayerController: NSObject, ObservableObject {
     private var audioPlayer: AVAudioPlayer?
     private var progressTimer: Timer?
     private var isDraggingSlider = false
+    private var wasPlayingBeforeInterruption = false
+    private var interruptionObserver: NSObjectProtocol?
+
+    // MARK: - Lifecycle
+
+    override init() {
+        super.init()
+        registerRemoteCommands()
+        observeAudioInterruptions()
+    }
+
+    deinit {
+        if let observer = interruptionObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
 
     // MARK: - Playback
 
@@ -36,16 +54,27 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     func togglePlayPause() {
         guard let audioPlayer else { return }
-
         if audioPlayer.isPlaying {
-            audioPlayer.pause()
-            isPlaying = false
-            stopProgressTimer()
+            pause()
         } else {
-            audioPlayer.play()
-            isPlaying = true
-            startProgressTimer()
+            resume()
         }
+    }
+
+    func pause() {
+        guard let audioPlayer else { return }
+        audioPlayer.pause()
+        isPlaying = false
+        stopProgressTimer()
+        updateNowPlayingInfo()
+    }
+
+    func resume() {
+        guard let audioPlayer else { return }
+        audioPlayer.play()
+        isPlaying = true
+        startProgressTimer()
+        updateNowPlayingInfo()
     }
 
     func isCurrentTrack(_ track: AudioTrack) -> Bool {
@@ -65,6 +94,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
     func endSliderInteraction(at time: TimeInterval) {
         isDraggingSlider = false
         setCurrentTime(time)
+        updateNowPlayingInfo()
     }
 
     func updateSliderTime(_ time: TimeInterval) {
@@ -77,6 +107,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
         let clamped = max(0, min(time, duration))
         audioPlayer.currentTime = clamped
         currentTime = clamped
+        updateNowPlayingInfo()
     }
 
     // MARK: - Navigation
@@ -138,6 +169,8 @@ final class AudioPlayerController: NSObject, ObservableObject {
             isPlaying = true
             errorMessage = nil
             startProgressTimer()
+            updateNowPlayingInfo()
+            updateRemoteCommandAvailability()
         } catch {
             errorMessage = error.localizedDescription
             isPlaying = false
@@ -146,7 +179,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playback, mode: .default)
+        try session.setCategory(.playback, mode: .default, options: [])
         try session.setActive(true)
     }
 
@@ -154,10 +187,12 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     private func startProgressTimer() {
         stopProgressTimer()
-        self.progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                guard !self.isDraggingSlider else { return }
-                self.currentTime = self.audioPlayer?.currentTime ?? 0
+                guard let self else { return }
+                if !self.isDraggingSlider {
+                    self.currentTime = self.audioPlayer?.currentTime ?? 0
+                }
             }
         }
     }
@@ -165,6 +200,135 @@ final class AudioPlayerController: NSObject, ObservableObject {
     private func stopProgressTimer() {
         progressTimer?.invalidate()
         progressTimer = nil
+    }
+
+    // MARK: - Audio Interruptions
+
+    private func observeAudioInterruptions() {
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            Task { @MainActor in
+                self?.handleInterruption(notification)
+            }
+        }
+    }
+
+    private func handleInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            wasPlayingBeforeInterruption = isPlaying
+            if isPlaying {
+                audioPlayer?.pause()
+                isPlaying = false
+                stopProgressTimer()
+                updateNowPlayingInfo()
+            }
+        case .ended:
+            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                if options.contains(.shouldResume), wasPlayingBeforeInterruption {
+                    resume()
+                }
+            }
+            wasPlayingBeforeInterruption = false
+        @unknown default:
+            break
+        }
+    }
+
+    // MARK: - Remote Commands
+
+    private func registerRemoteCommands() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+
+        commandCenter.playCommand.addTarget { [weak self] _ in
+            guard let self else { return .commandFailed }
+            self.resume()
+            return .success
+        }
+
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
+            guard let self else { return .commandFailed }
+            self.pause()
+            return .success
+        }
+
+        commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
+            guard let self else { return .commandFailed }
+            self.togglePlayPause()
+            return .success
+        }
+
+        commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+            guard let self else { return .commandFailed }
+            self.playNext(from: self.libraryTracks)
+            return .success
+        }
+
+        commandCenter.previousTrackCommand.addTarget { [weak self] _ in
+            guard let self else { return .commandFailed }
+            self.playPrevious(from: self.libraryTracks)
+            return .success
+        }
+
+        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let self,
+                  let positionEvent = event as? MPChangePlaybackPositionCommandEvent else {
+                return .commandFailed
+            }
+            self.setCurrentTime(positionEvent.positionTime)
+            self.updateNowPlayingInfo()
+            return .success
+        }
+
+        updateRemoteCommandAvailability()
+    }
+
+    private func updateRemoteCommandAvailability() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        let hasTrack = currentTrack != nil
+        commandCenter.playCommand.isEnabled = hasTrack
+        commandCenter.pauseCommand.isEnabled = hasTrack
+        commandCenter.togglePlayPauseCommand.isEnabled = hasTrack
+        commandCenter.nextTrackCommand.isEnabled = hasTrack && !libraryTracks.isEmpty
+        commandCenter.previousTrackCommand.isEnabled = hasTrack && !libraryTracks.isEmpty
+        commandCenter.changePlaybackPositionCommand.isEnabled = hasTrack
+    }
+
+    // MARK: - Now Playing Info Center
+
+    private func updateNowPlayingInfo() {
+        guard let track = currentTrack else {
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+
+        var nowPlayingInfo: [String: Any] = [
+            MPMediaItemPropertyTitle: track.title,
+            MPMediaItemPropertyArtist: track.artist == AudioMetadataFallbacks.artist ? "Unknown Artist" : track.artist,
+            MPMediaItemPropertyAlbumTitle: track.album,
+            MPMediaItemPropertyPlaybackDuration: duration,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
+            MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0,
+            MPNowPlayingInfoPropertyIsLiveStream: false
+        ]
+
+        if let artworkData = track.artworkData,
+           let image = UIImage(data: artworkData) {
+            let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
+        }
+
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
 }
 
@@ -175,6 +339,7 @@ extension AudioPlayerController: AVAudioPlayerDelegate {
         Task { @MainActor in
             self.isPlaying = false
             self.stopProgressTimer()
+            self.updateNowPlayingInfo()
 
             if repeatMode == .one {
                 if let track = currentTrack {
