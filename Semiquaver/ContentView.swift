@@ -10,11 +10,6 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            VideoTabView()
-                .tabItem {
-                    Label("Video", systemImage: "play.square.fill")
-                }
-
             AudioTabView()
                 .tabItem {
                     Label("Audio", systemImage: "music.note")
@@ -23,11 +18,6 @@ struct ContentView: View {
             PlaylistsTabView()
                 .tabItem {
                     Label("Playlists", systemImage: "music.note.list")
-                }
-
-            BrowseTabView()
-                .tabItem {
-                    Label("Browse", systemImage: "chart.bar.fill")
                 }
 
             SettingsTabView()

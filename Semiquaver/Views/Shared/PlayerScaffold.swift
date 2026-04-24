@@ -3,6 +3,7 @@ import SwiftUI
 struct PlayerScaffold<Content: View>: View {
     let title: String
     var trailingSystemImage: String? = nil
+    var trailingAction: (() -> Void)? = nil
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -27,13 +28,18 @@ struct PlayerScaffold<Content: View>: View {
             HStack {
                 Spacer()
                 if let trailingSystemImage {
-                    Button {
-                    } label: {
+                    if let trailingAction {
+                        Button(action: trailingAction) {
+                            Image(systemName: trailingSystemImage)
+                                .font(.system(size: 30, weight: .semibold))
+                                .foregroundStyle(Color.playerAccent)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
                         Image(systemName: trailingSystemImage)
                             .font(.system(size: 30, weight: .semibold))
                             .foregroundStyle(Color.playerAccent)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.trailing, 18)

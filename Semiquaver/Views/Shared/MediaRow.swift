@@ -3,6 +3,8 @@ import SwiftUI
 struct MediaRow: View {
     let item: MediaItem
     var showsChevron = false
+    var trailingSystemImage: String? = nil
+    var isHighlighted = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -34,7 +36,11 @@ struct MediaRow: View {
 
             Spacer()
 
-            if showsChevron {
+            if let trailingSystemImage {
+                Image(systemName: trailingSystemImage)
+                    .font(.system(size: 21, weight: .bold))
+                    .foregroundStyle(Color.playerAccent)
+            } else if showsChevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(Color.playerAccent)
@@ -42,5 +48,6 @@ struct MediaRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+        .background(isHighlighted ? Color.playerAccent.opacity(0.10) : Color.clear)
     }
 }
