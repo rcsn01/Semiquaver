@@ -140,7 +140,6 @@ struct SettingsTabView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func sectionHeader(_ title: String) -> some View {

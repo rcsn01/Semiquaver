@@ -130,6 +130,5 @@ struct QueueListView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }

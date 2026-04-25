@@ -72,7 +72,7 @@ struct NowPlayingBar: View {
                 .overlay {
                     Image(systemName: player.isPlaying ? "waveform" : "pause.fill")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.white)
+                        .foregroundStyle(Color.playerArtworkIcon)
                 }
                 .modifier(GlowModifier(color: MediaArtworkPalette.colors(for: track.id).first ?? .clear, radius: 8))
         }

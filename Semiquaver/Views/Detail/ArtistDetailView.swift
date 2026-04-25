@@ -61,7 +61,7 @@ struct ArtistDetailView: View {
 
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 56, weight: .light))
-                    .foregroundStyle(Color.white.opacity(0.8))
+                    .foregroundStyle(Color.playerArtworkIcon)
             }
 
             VStack(spacing: 4) {

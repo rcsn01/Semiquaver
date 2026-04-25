@@ -145,7 +145,7 @@ struct AudioTrack: Identifiable, Hashable, Sendable, Codable {
             subtitle: subtitle.isEmpty ? durationText : subtitle,
             icon: isCurrent && isPlaying ? "waveform" : "music.note",
             colors: isCurrent
-                ? [Color.playerAccent.opacity(0.85), Color.orange.opacity(0.55)]
+                ? [Color.playerAccent.opacity(0.85), Color.playerAccent.opacity(0.55)]
                 : MediaArtworkPalette.colors(for: id),
             artworkData: artworkData
         )

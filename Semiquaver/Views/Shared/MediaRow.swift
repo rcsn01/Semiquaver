@@ -66,8 +66,8 @@ struct MediaRow: View {
 
                 Image(systemName: item.icon)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.white)
-                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    .foregroundStyle(Color.playerArtworkIcon)
+                    .shadow(color: Color.playerArtworkShadow, radius: 2, x: 0, y: 1)
             }
         }
     }
