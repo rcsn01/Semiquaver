@@ -70,7 +70,6 @@ struct ContentView: View {
             Text(player.errorMessage ?? "")
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .preferredColorScheme(.dark)
     }
 
     private var playbackErrorBinding: Binding<Bool> {

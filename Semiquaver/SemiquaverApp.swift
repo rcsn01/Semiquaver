@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct SemiquaverApp: App {
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("appTheme") private var appTheme: AppTheme = .automatic
 
     init() {
         AppMusicDirectory.ensureExists()
@@ -18,6 +19,7 @@ struct SemiquaverApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(appTheme.colorScheme)
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {

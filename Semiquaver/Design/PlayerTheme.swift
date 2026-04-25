@@ -72,3 +72,21 @@ struct GlowModifier: ViewModifier {
             .shadow(color: color.opacity(0.15), radius: radius, x: 0, y: 0)
     }
 }
+
+// MARK: - App Theme
+
+enum AppTheme: String, CaseIterable {
+    case automatic = "Automatic"
+    case dark = "Dark"
+    case light = "Light"
+    
+    var displayName: String { rawValue }
+    
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .automatic: return nil
+        case .dark: return .dark
+        case .light: return .light
+        }
+    }
+}
