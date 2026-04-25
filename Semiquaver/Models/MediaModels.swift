@@ -9,7 +9,7 @@ struct MediaItem: Identifiable {
     let subtitle: String
     let icon: String
     let colors: [Color]
-    var artwork: UIImage? = nil
+    var artworkData: Data? = nil
 
     init(
         id: String = UUID().uuidString,
@@ -17,14 +17,14 @@ struct MediaItem: Identifiable {
         subtitle: String,
         icon: String,
         colors: [Color],
-        artwork: UIImage? = nil
+        artworkData: Data? = nil
     ) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.icon = icon
         self.colors = colors
-        self.artwork = artwork
+        self.artworkData = artworkData
     }
 }
 
@@ -139,11 +139,6 @@ struct AudioTrack: Identifiable, Hashable, Sendable, Codable {
         let subtitleParts = [playbackState, detailText].compactMap { $0 }
         let subtitle = subtitleParts.joined(separator: " • ")
 
-        var artworkImage: UIImage?
-        if let artworkData {
-            artworkImage = UIImage(data: artworkData)
-        }
-
         return MediaItem(
             id: id,
             title: title,
@@ -152,7 +147,7 @@ struct AudioTrack: Identifiable, Hashable, Sendable, Codable {
             colors: isCurrent
                 ? [Color.playerAccent.opacity(0.85), Color.orange.opacity(0.55)]
                 : MediaArtworkPalette.colors(for: id),
-            artwork: artworkImage
+            artworkData: artworkData
         )
     }
 }
@@ -165,18 +160,13 @@ struct AudioGroupSummary: Identifiable, Hashable, Sendable {
     let artworkData: Data?
 
     var mediaItem: MediaItem {
-        var artworkImage: UIImage?
-        if let artworkData {
-            artworkImage = UIImage(data: artworkData)
-        }
-
-        return MediaItem(
+        MediaItem(
             id: id,
             title: title,
             subtitle: subtitle,
             icon: kind.systemImage,
             colors: MediaArtworkPalette.colors(for: id),
-            artwork: artworkImage
+            artworkData: artworkData
         )
     }
 }

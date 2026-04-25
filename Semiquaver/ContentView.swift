@@ -31,7 +31,7 @@ struct ContentView: View {
         Group {
             switch selectedTab {
             case .library:
-                AudioTabView(player: player, showNowPlayingFullScreen: $showNowPlayingFullScreen)
+                AudioTabView(library: library, player: player, showNowPlayingFullScreen: $showNowPlayingFullScreen)
             case .playlists:
                 PlaylistsTabView(player: player, showNowPlayingFullScreen: $showNowPlayingFullScreen)
             case .settings:

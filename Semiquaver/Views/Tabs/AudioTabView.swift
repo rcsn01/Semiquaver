@@ -7,9 +7,10 @@ enum AudioCategory: String, CaseIterable {
 }
 
 struct AudioTabView: View {
-    @StateObject private var library = AppMusicLibrary()
+    @ObservedObject var library: AppMusicLibrary
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlayingFullScreen: Bool
+    @State private var selectedCategory: AudioCategory = .songs
 
     var body: some View {
         NavigationStack {
@@ -26,9 +27,6 @@ struct AudioTabView: View {
 
                     content
                 }
-            }
-            .task {
-                await library.reload()
             }
         }
     }
@@ -75,8 +73,6 @@ struct AudioTabView: View {
             .padding(.vertical, 12)
         }
     }
-
-    @State private var selectedCategory: AudioCategory = .songs
 
     private func categoryButton(_ category: AudioCategory) -> some View {
         let isSelected = selectedCategory == category
@@ -156,8 +152,7 @@ struct AudioTabView: View {
 
     private func artistRows(for summaries: [AudioGroupSummary]) -> some View {
         ForEach(summaries) { summary in
-            let artistTracks = library.tracks.filter { $0.artist == summary.title }
-                .sorted { sortTracks($0, $1) }
+            let artistTracks = library.tracksByArtist[summary.title] ?? []
 
             NavigationLink {
                 ArtistDetailView(
@@ -182,24 +177,13 @@ struct AudioTabView: View {
 
     private func albumRows(for summaries: [AudioGroupSummary]) -> some View {
         ForEach(summaries) { summary in
-            let parts = summary.title.split(separator: " • ", maxSplits: 1, omittingEmptySubsequences: false)
-            let albumTitle = summary.title
-            let albumArtist = parts.first.map(String.init) ?? "Unknown Artist"
-            let albumTracks = library.tracks.filter {
-                "Album::\($0.artist)::\($0.album)" == "Album::\(albumArtist)::\(albumTitle)"
-            }
-            .sorted { sortTracks($0, $1) }
-
-            // Fallback if the ID-based filtering doesn't work — try loose filtering
-            let finalTracks = albumTracks.isEmpty
-                ? library.tracks.filter { $0.album == albumTitle }.sorted { sortTracks($0, $1) }
-                : albumTracks
+            let albumTracks = library.tracksByAlbumID[summary.id] ?? []
 
             NavigationLink {
                 AlbumDetailView(
-                    tracks: finalTracks,
-                    albumTitle: albumTitle,
-                    artistName: albumArtist,
+                    tracks: albumTracks,
+                    albumTitle: summary.title,
+                    artistName: summary.subtitle.components(separatedBy: " • ").first ?? "Unknown Artist",
                     artworkData: summary.artworkData,
                     player: player,
                     showNowPlayingFullScreen: $showNowPlayingFullScreen
@@ -224,7 +208,7 @@ struct AudioTabView: View {
                 Button {
                     player.play(
                         track: track,
-                        in: library.tracks.sorted { sortTracks($0, $1) },
+                        in: library.songs,
                         context: .library
                     )
                     showNowPlayingFullScreen = true
@@ -325,15 +309,5 @@ struct AudioTabView: View {
         Task {
             await library.reload(force: true)
         }
-    }
-
-    private func sortTracks(_ lhs: AudioTrack, _ rhs: AudioTrack) -> Bool {
-        if lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending {
-            return true
-        }
-        if lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedDescending {
-            return false
-        }
-        return lhs.artist.localizedCaseInsensitiveCompare(rhs.artist) == .orderedAscending
     }
 }
