@@ -38,6 +38,9 @@ struct ContentView: View {
                 SettingsTabView(player: player)
             }
         }
+        .task {
+            await library.reload()
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let currentTrack = player.currentTrack {
                 Button {
