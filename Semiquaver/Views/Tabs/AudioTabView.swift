@@ -4,7 +4,6 @@ enum AudioCategory: String, CaseIterable {
     case artists = "Artists"
     case albums = "Albums"
     case songs = "Songs"
-    case genres = "Genres"
 }
 
 struct AudioTabView: View {
@@ -124,7 +123,7 @@ struct AudioTabView: View {
             )
         } else {
             switch selectedCategory {
-            case .artists, .albums, .genres:
+            case .artists, .albums:
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 0) {
                         switch selectedCategory {
@@ -132,8 +131,6 @@ struct AudioTabView: View {
                             artistRows(for: library.artists)
                         case .albums:
                             albumRows(for: library.albums)
-                        case .genres:
-                            genreRows(for: library.genres)
                         default:
                             EmptyView()
                         }
@@ -204,32 +201,6 @@ struct AudioTabView: View {
                     albumTitle: albumTitle,
                     artistName: albumArtist,
                     artworkData: summary.artworkData,
-                    player: player,
-                    showNowPlayingFullScreen: $showNowPlayingFullScreen
-                )
-            } label: {
-                MediaRow(item: summary.mediaItem, showsChevron: true)
-                    .padding(.horizontal, 4)
-            }
-            .buttonStyle(PressScaleButtonStyle())
-
-            if summary.id != summaries.last?.id {
-                Divider()
-                    .overlay(Color.playerDivider)
-                    .padding(.leading, 76)
-            }
-        }
-    }
-
-    private func genreRows(for summaries: [AudioGroupSummary]) -> some View {
-        ForEach(summaries) { summary in
-            let genreTracks = library.tracks.filter { $0.genre == summary.title }
-                .sorted { sortTracks($0, $1) }
-
-            NavigationLink {
-                GenreDetailView(
-                    tracks: genreTracks,
-                    genreName: summary.title,
                     player: player,
                     showNowPlayingFullScreen: $showNowPlayingFullScreen
                 )

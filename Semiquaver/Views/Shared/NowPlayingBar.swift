@@ -40,7 +40,14 @@ struct NowPlayingBar: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .modifier(GlassCardModifier())
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.playerSurface.opacity(0.85))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                )
+        )
     }
 
     @ViewBuilder
