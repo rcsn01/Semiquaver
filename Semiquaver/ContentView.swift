@@ -24,6 +24,7 @@ enum Tab: String, CaseIterable {
 struct ContentView: View {
     @State private var selectedTab: Tab = .library
     @StateObject private var player = AudioPlayerController()
+    @StateObject private var library = AppMusicLibrary()
     @State private var showNowPlayingFullScreen = false
 
     var body: some View {
@@ -32,9 +33,9 @@ struct ContentView: View {
             case .library:
                 AudioTabView(player: player, showNowPlayingFullScreen: $showNowPlayingFullScreen)
             case .playlists:
-                PlaylistsTabView()
+                PlaylistsTabView(player: player, showNowPlayingFullScreen: $showNowPlayingFullScreen)
             case .settings:
-                SettingsTabView()
+                SettingsTabView(player: player)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

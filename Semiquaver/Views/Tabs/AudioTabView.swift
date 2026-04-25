@@ -10,33 +10,28 @@ enum AudioCategory: String, CaseIterable {
 struct AudioTabView: View {
     @StateObject private var library = AppMusicLibrary()
     @ObservedObject var player: AudioPlayerController
-    @State private var selectedCategory: AudioCategory = .songs
     @Binding var showNowPlayingFullScreen: Bool
 
     var body: some View {
-        ZStack {
-            PlayerBackground()
+        NavigationStack {
+            ZStack {
+                PlayerBackground()
 
-            VStack(spacing: 0) {
-                header
+                VStack(spacing: 0) {
+                    header
 
-                Divider()
-                    .overlay(Color.playerDivider)
+                    Divider()
+                        .overlay(Color.playerDivider)
 
-                categoryBar
+                    categoryBar
 
-                content
+                    content
+                }
+            }
+            .task {
+                await library.reload()
             }
         }
-        .task {
-            await library.reload()
-        }
-        .onChange(of: library.tracks) { _, newTracks in
-            player.setLibrary(newTracks)
-        }
-        // Reload on scene phase activation removed to avoid full rescans on every foreground.
-        // Library stays current via incremental background sync on next cold launch.
-        // Use the header refresh button for a forced rescan.
     }
 
     // MARK: - Header
@@ -82,6 +77,8 @@ struct AudioTabView: View {
         }
     }
 
+    @State private var selectedCategory: AudioCategory = .songs
+
     private func categoryButton(_ category: AudioCategory) -> some View {
         let isSelected = selectedCategory == category
 
@@ -126,32 +123,121 @@ struct AudioTabView: View {
                 systemImage: "music.note"
             )
         } else {
-            ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 0) {
-                    switch selectedCategory {
-                    case .artists:
-                        summaryRows(for: library.artists)
-                    case .albums:
-                        summaryRows(for: library.albums)
-                    case .songs:
-                        songRows(for: library.songs)
-                    case .genres:
-                        summaryRows(for: library.genres)
+            switch selectedCategory {
+            case .artists, .albums, .genres:
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 0) {
+                        switch selectedCategory {
+                        case .artists:
+                            artistRows(for: library.artists)
+                        case .albums:
+                            albumRows(for: library.albums)
+                        case .genres:
+                            genreRows(for: library.genres)
+                        default:
+                            EmptyView()
+                        }
                     }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
+            case .songs:
+                List {
+                    songRows(for: library.songs)
+                }
+                .listStyle(.plain)
+                .scrollIndicators(.hidden)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .padding(.horizontal, 0)
             }
         }
     }
 
     // MARK: - Rows
 
-    private func summaryRows(for summaries: [AudioGroupSummary]) -> some View {
+    private func artistRows(for summaries: [AudioGroupSummary]) -> some View {
         ForEach(summaries) { summary in
-            MediaRow(item: summary.mediaItem)
-                .padding(.horizontal, 4)
+            let artistTracks = library.tracks.filter { $0.artist == summary.title }
+                .sorted { sortTracks($0, $1) }
+
+            NavigationLink {
+                ArtistDetailView(
+                    tracks: artistTracks,
+                    artistName: summary.title,
+                    player: player,
+                    showNowPlayingFullScreen: $showNowPlayingFullScreen
+                )
+            } label: {
+                MediaRow(item: summary.mediaItem, showsChevron: true)
+                    .padding(.horizontal, 4)
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            if summary.id != summaries.last?.id {
+                Divider()
+                    .overlay(Color.playerDivider)
+                    .padding(.leading, 76)
+            }
+        }
+    }
+
+    private func albumRows(for summaries: [AudioGroupSummary]) -> some View {
+        ForEach(summaries) { summary in
+            let parts = summary.title.split(separator: " • ", maxSplits: 1, omittingEmptySubsequences: false)
+            let albumTitle = summary.title
+            let albumArtist = parts.first.map(String.init) ?? "Unknown Artist"
+            let albumTracks = library.tracks.filter {
+                "Album::\($0.artist)::\($0.album)" == "Album::\(albumArtist)::\(albumTitle)"
+            }
+            .sorted { sortTracks($0, $1) }
+
+            // Fallback if the ID-based filtering doesn't work — try loose filtering
+            let finalTracks = albumTracks.isEmpty
+                ? library.tracks.filter { $0.album == albumTitle }.sorted { sortTracks($0, $1) }
+                : albumTracks
+
+            NavigationLink {
+                AlbumDetailView(
+                    tracks: finalTracks,
+                    albumTitle: albumTitle,
+                    artistName: albumArtist,
+                    artworkData: summary.artworkData,
+                    player: player,
+                    showNowPlayingFullScreen: $showNowPlayingFullScreen
+                )
+            } label: {
+                MediaRow(item: summary.mediaItem, showsChevron: true)
+                    .padding(.horizontal, 4)
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            if summary.id != summaries.last?.id {
+                Divider()
+                    .overlay(Color.playerDivider)
+                    .padding(.leading, 76)
+            }
+        }
+    }
+
+    private func genreRows(for summaries: [AudioGroupSummary]) -> some View {
+        ForEach(summaries) { summary in
+            let genreTracks = library.tracks.filter { $0.genre == summary.title }
+                .sorted { sortTracks($0, $1) }
+
+            NavigationLink {
+                GenreDetailView(
+                    tracks: genreTracks,
+                    genreName: summary.title,
+                    player: player,
+                    showNowPlayingFullScreen: $showNowPlayingFullScreen
+                )
+            } label: {
+                MediaRow(item: summary.mediaItem, showsChevron: true)
+                    .padding(.horizontal, 4)
+            }
+            .buttonStyle(PressScaleButtonStyle())
 
             if summary.id != summaries.last?.id {
                 Divider()
@@ -163,28 +249,54 @@ struct AudioTabView: View {
 
     private func songRows(for songs: [AudioTrack]) -> some View {
         ForEach(songs) { track in
-            Button {
-                player.togglePlayback(for: track)
-                showNowPlayingFullScreen = true
-            } label: {
-                MediaRow(
-                    item: track.mediaItem(
-                        isCurrent: player.isCurrentTrack(track),
-                        isPlaying: player.isPlaying
-                    ),
-                    trailingSystemImage: trailingImage(for: track),
-                    isHighlighted: player.isCurrentTrack(track)
-                )
-                .padding(.horizontal, 4)
-            }
-            .buttonStyle(PressScaleButtonStyle())
+            VStack(spacing: 0) {
+                Button {
+                    player.play(
+                        track: track,
+                        in: library.tracks.sorted { sortTracks($0, $1) },
+                        context: .library
+                    )
+                    showNowPlayingFullScreen = true
+                } label: {
+                    MediaRow(
+                        item: track.mediaItem(
+                            isCurrent: player.isCurrentTrack(track),
+                            isPlaying: player.isPlaying
+                        ),
+                        trailingSystemImage: trailingImage(for: track),
+                        isHighlighted: player.isCurrentTrack(track)
+                    )
+                    .padding(.horizontal, 4)
+                }
+                .buttonStyle(PressScaleButtonStyle())
 
-            if track.id != songs.last?.id {
-                Divider()
-                    .overlay(Color.playerDivider)
-                    .padding(.leading, 76)
+                if track.id != songs.last?.id {
+                    Divider()
+                        .overlay(Color.playerDivider)
+                        .padding(.leading, 76)
+                }
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+            .swipeActions(edge: .leading) {
+                Button {
+                    player.addToQueue(track)
+                } label: {
+                    Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
+                }
+                .tint(Color.playerAccent)
             }
         }
+    }
+
+    // MARK: - Helpers
+
+    private func trailingImage(for track: AudioTrack) -> String? {
+        if player.isCurrentTrack(track) {
+            return player.isPlaying ? "pause.fill" : "play.fill"
+        }
+        return nil
     }
 
     // MARK: - States
@@ -244,11 +356,13 @@ struct AudioTabView: View {
         }
     }
 
-    private func trailingImage(for track: AudioTrack) -> String {
-        if player.isCurrentTrack(track) {
-            return player.isPlaying ? "pause.fill" : "play.fill"
+    private func sortTracks(_ lhs: AudioTrack, _ rhs: AudioTrack) -> Bool {
+        if lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending {
+            return true
         }
-        return "play.fill"
+        if lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedDescending {
+            return false
+        }
+        return lhs.artist.localizedCaseInsensitiveCompare(rhs.artist) == .orderedAscending
     }
-
 }

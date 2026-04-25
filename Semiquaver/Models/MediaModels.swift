@@ -28,7 +28,7 @@ struct MediaItem: Identifiable {
     }
 }
 
-struct PlaylistItem: Identifiable, Codable {
+struct PlaylistItem: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
     var detail: String
@@ -43,6 +43,46 @@ struct PlaylistItem: Identifiable, Codable {
 
     var colors: [Color] {
         MediaArtworkPalette.colors(for: id.uuidString)
+    }
+}
+
+// MARK: - Playback Context
+
+enum PlaybackContext: Equatable {
+    case library
+    case album(artist: String, title: String)
+    case artist(String)
+    case genre(String)
+    case playlist(PlaylistItem)
+
+    var displayName: String {
+        switch self {
+        case .library:
+            return "Library"
+        case .album(let artist, let title):
+            return "\(title) by \(artist)"
+        case .artist(let name):
+            return name
+        case .genre(let name):
+            return name
+        case .playlist(let playlist):
+            return playlist.title
+        }
+    }
+
+    var shortName: String {
+        switch self {
+        case .library:
+            return "Library"
+        case .album(_, let title):
+            return title
+        case .artist(let name):
+            return name
+        case .genre(let name):
+            return name
+        case .playlist(let playlist):
+            return playlist.title
+        }
     }
 }
 

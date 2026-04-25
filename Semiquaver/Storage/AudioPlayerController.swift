@@ -17,10 +17,12 @@ final class AudioPlayerController: NSObject, ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var currentTime: TimeInterval = 0
     @Published private(set) var duration: TimeInterval = 0
-    @Published var shuffleEnabled = false
     @Published var repeatMode: RepeatMode = .off
+    @Published var shuffleByDefault = false
 
-    @Published private(set) var libraryTracks: [AudioTrack] = []
+    @Published var playbackQueue: [AudioTrack] = []
+    @Published var playbackContext: PlaybackContext = .library
+    @Published var playbackHistory: [AudioTrack] = []
 
     private var audioPlayer: AVAudioPlayer?
     private var progressTimer: Timer?
@@ -44,12 +46,50 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     // MARK: - Playback
 
+    func play(track: AudioTrack, in queue: [AudioTrack], context: PlaybackContext) {
+        playbackContext = context
+        playbackHistory = []
+
+        // Rotate queue so the tapped track is first
+        if let index = queue.firstIndex(where: { $0.id == track.id }) {
+            var reordered = Array(queue[index...]) + Array(queue[..<index])
+            if shuffleByDefault {
+                let tail = Array(reordered.dropFirst())
+                let shuffledTail = tail.shuffled()
+                reordered = [reordered[0]] + shuffledTail
+            }
+            playbackQueue = reordered
+        } else {
+            playbackQueue = [track]
+        }
+
+        play(track)
+    }
+
+    func addToQueue(_ track: AudioTrack) {
+        playbackQueue.append(track)
+    }
+
+    func removeFromQueue(at index: Int) {
+        guard index >= 0, index < playbackQueue.count else { return }
+        playbackQueue.remove(at: index)
+    }
+
+    func moveQueueItem(from source: IndexSet, to destination: Int) {
+        playbackQueue.move(fromOffsets: source, toOffset: destination)
+    }
+
+    func addToHistory(_ track: AudioTrack) {
+        playbackHistory.append(track)
+    }
+
     func togglePlayback(for track: AudioTrack) {
         if currentTrack?.id == track.id {
             togglePlayPause()
             return
         }
-        play(track)
+        // If no explicit queue/context, default to library
+        play(track: track, in: playbackQueue.isEmpty ? [track] : playbackQueue, context: playbackContext)
     }
 
     func togglePlayPause() {
@@ -76,6 +116,8 @@ final class AudioPlayerController: NSObject, ObservableObject {
         isPlaying = false
         currentTime = 0
         duration = 0
+        playbackQueue = []
+        playbackHistory = []
         stopProgressTimer()
         updateNowPlayingInfo()
         updateRemoteCommandAvailability()
@@ -124,43 +166,56 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     // MARK: - Navigation
 
-    func playPrevious(from tracks: [AudioTrack]) {
+    func playPrevious() {
         guard let current = currentTrack else { return }
-        guard let currentIndex = tracks.firstIndex(where: { $0.id == current.id }) else { return }
 
         if currentTime > 3 {
             setCurrentTime(0)
             return
         }
 
-        let newIndex = max(0, currentIndex - 1)
-        if newIndex != currentIndex {
-            play(tracks[newIndex])
+        if let lastHistoryTrack = playbackHistory.popLast() {
+            // Rotate queue so the history track is placed at front, current at position 1
+            let reordered = [lastHistoryTrack, current] + playbackQueue.filter { $0.id != lastHistoryTrack.id && $0.id != current.id }
+            playbackQueue = reordered
+            play(lastHistoryTrack)
         }
     }
 
-    func playNext(from tracks: [AudioTrack]) {
+    func playNext() {
         guard let current = currentTrack else { return }
-        guard let currentIndex = tracks.firstIndex(where: { $0.id == current.id }) else { return }
 
-        let newIndex: Int
-        if shuffleEnabled {
-            newIndex = Int.random(in: 0..<tracks.count)
-        } else {
-            newIndex = min(currentIndex + 1, tracks.count - 1)
+        // Check if current track is still at the front of queue and remove it
+        if let first = playbackQueue.first, first.id == current.id {
+            _ = playbackQueue.removeFirst()
         }
 
-        if repeatMode == .all && newIndex == currentIndex {
-            play(tracks[0])
-        } else if newIndex != currentIndex {
-            play(tracks[newIndex])
+        // Next track logic
+        if repeatMode == .one {
+            self.play(current)
+            return
+        }
+
+        if !playbackQueue.isEmpty {
+            play(playbackQueue[0])
+        } else if repeatMode == .all {
+            // Rebuild queue from history, keep original order
+            playbackQueue = playbackHistory + [current]
+            playbackHistory = []
+            play(playbackQueue[0])
         }
     }
 
-    // MARK: - Library
+    func shuffleQueue() {
+        guard let current = currentTrack else { return }
 
-    func setLibrary(_ tracks: [AudioTrack]) {
-        libraryTracks = tracks
+        if let first = playbackQueue.first, first.id == current.id {
+            let tail = Array(playbackQueue.dropFirst())
+            playbackQueue = [current] + tail.shuffled()
+        } else {
+            // If current is not first, just shuffle what we have
+            playbackQueue = playbackQueue.shuffled()
+        }
     }
 
     // MARK: - Private
@@ -282,13 +337,13 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
         commandCenter.nextTrackCommand.addTarget { [weak self] _ in
             guard let self else { return .commandFailed }
-            self.playNext(from: self.libraryTracks)
+            self.playNext()
             return .success
         }
 
         commandCenter.previousTrackCommand.addTarget { [weak self] _ in
             guard let self else { return .commandFailed }
-            self.playPrevious(from: self.libraryTracks)
+            self.playPrevious()
             return .success
         }
 
@@ -311,8 +366,8 @@ final class AudioPlayerController: NSObject, ObservableObject {
         commandCenter.playCommand.isEnabled = hasTrack
         commandCenter.pauseCommand.isEnabled = hasTrack
         commandCenter.togglePlayPauseCommand.isEnabled = hasTrack
-        commandCenter.nextTrackCommand.isEnabled = hasTrack && !libraryTracks.isEmpty
-        commandCenter.previousTrackCommand.isEnabled = hasTrack && !libraryTracks.isEmpty
+        commandCenter.nextTrackCommand.isEnabled = hasTrack && !playbackQueue.isEmpty
+        commandCenter.previousTrackCommand.isEnabled = hasTrack && !playbackHistory.isEmpty
         commandCenter.changePlaybackPositionCommand.isEnabled = hasTrack
     }
 
@@ -348,23 +403,21 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
 extension AudioPlayerController: AVAudioPlayerDelegate {
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in
+        Task { @MainActor [self] in
             self.isPlaying = false
             self.stopProgressTimer()
-            self.updateNowPlayingInfo()
 
-            if repeatMode == .one {
-                if let track = currentTrack {
-                    self.play(track)
-                }
-            } else if !libraryTracks.isEmpty {
-                playNext(from: libraryTracks)
+            if let track = self.currentTrack {
+                self.playbackHistory.append(track)
             }
+
+            self.updateNowPlayingInfo()
+            self.playNext()
         }
     }
 
     nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Error)?) {
-        Task { @MainActor in
+        Task { @MainActor [self] in
             self.isPlaying = false
             self.stopProgressTimer()
             self.errorMessage = error?.localizedDescription ?? "Semiquaver couldn't decode that audio file."
