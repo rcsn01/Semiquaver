@@ -4,16 +4,29 @@ import Foundation
 
 @MainActor
 final class AppMusicLibrary: ObservableObject {
-    @Published private(set) var tracks: [AudioTrack] = []
+    @Published private(set) var tracks: [AudioTrack] = [] {
+        didSet { rebuildDerivedCollections() }
+    }
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
 
-    var songs: [AudioTrack] {
-        tracks.sorted(by: Self.sortTracks)
+    @Published private(set) var songs: [AudioTrack] = []
+    @Published private(set) var artists: [AudioGroupSummary] = []
+    @Published private(set) var albums: [AudioGroupSummary] = []
+
+    @Published private(set) var tracksByArtist: [String: [AudioTrack]] = [:]
+    @Published private(set) var tracksByAlbumID: [String: [AudioTrack]] = [:]
+
+    init() {
+        rebuildDerivedCollections()
     }
 
-    var artists: [AudioGroupSummary] {
-        Dictionary(grouping: tracks, by: \ .artist)
+    private func rebuildDerivedCollections() {
+        songs = tracks.sorted(by: Self.sortTracks)
+
+        let artistMap = Dictionary(grouping: tracks, by: \.artist)
+        tracksByArtist = artistMap.mapValues { $0.sorted(by: Self.sortTracks) }
+        artists = artistMap
             .map { artist, groupedTracks in
                 AudioGroupSummary(
                     id: "artist::\(artist)",
@@ -24,12 +37,12 @@ final class AppMusicLibrary: ObservableObject {
                 )
             }
             .sorted { Self.sortTitles($0.title, $1.title) }
-    }
 
-    var albums: [AudioGroupSummary] {
-        Dictionary(grouping: tracks) { track in
+        let albumMap = Dictionary(grouping: tracks) { track in
             "\(track.artist)::\(track.album)"
         }
+        tracksByAlbumID = albumMap.mapValues { $0.sorted(by: Self.sortTracks) }
+        albums = albumMap
         .values
         .compactMap { groupedTracks in
             guard let firstTrack = groupedTracks.first else {
@@ -50,20 +63,6 @@ final class AppMusicLibrary: ObservableObject {
             )
         }
         .sorted { Self.sortTitles($0.title, $1.title) }
-    }
-
-    var genres: [AudioGroupSummary] {
-        Dictionary(grouping: tracks, by: \ .genre)
-            .map { genre, groupedTracks in
-                AudioGroupSummary(
-                    id: "genre::\(genre)",
-                    title: genre,
-                    subtitle: Self.songCountLabel(groupedTracks.count),
-                    kind: .genre,
-                    artworkData: groupedTracks.first?.artworkData
-                )
-            }
-            .sorted { Self.sortTitles($0.title, $1.title) }
     }
 
     func reload(force: Bool = false) async {

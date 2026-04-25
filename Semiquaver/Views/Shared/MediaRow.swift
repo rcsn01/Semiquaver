@@ -43,7 +43,8 @@ struct MediaRow: View {
 
     @ViewBuilder
     private var artworkView: some View {
-        if let artwork = item.artwork {
+        if let artworkData = item.artworkData,
+           let artwork = UIImage(data: artworkData) {
             Image(uiImage: artwork)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
