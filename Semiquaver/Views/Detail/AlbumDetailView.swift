@@ -47,7 +47,7 @@ struct AlbumDetailView: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 200, height: 200)
                     .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .shadow(color: .black.opacity(0.4), radius: 24, x: 0, y: 12)
+                    .shadow(color: Color.playerShadow, radius: 24, x: 0, y: 12)
             } else {
                 ZStack {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -59,11 +59,11 @@ struct AlbumDetailView: View {
                             )
                         )
                         .frame(width: 200, height: 200)
-                        .shadow(color: .black.opacity(0.4), radius: 24, x: 0, y: 12)
+                        .shadow(color: Color.playerShadow, radius: 24, x: 0, y: 12)
 
                     Image(systemName: "square.stack.fill")
                         .font(.system(size: 72, weight: .light))
-                        .foregroundStyle(Color.white.opacity(0.7))
+                        .foregroundStyle(Color.playerArtworkIcon)
                 }
             }
 

@@ -180,7 +180,7 @@ struct NowPlayingView: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: size, height: size)
                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .shadow(color: .black.opacity(0.4), radius: 24, x: 0, y: 12)
+                    .shadow(color: Color.playerShadow, radius: 24, x: 0, y: 12)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
             }
             .aspectRatio(1, contentMode: .fit)
@@ -195,11 +195,11 @@ struct NowPlayingView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: .black.opacity(0.4), radius: 24, x: 0, y: 12)
+                    .shadow(color: Color.playerShadow, radius: 24, x: 0, y: 12)
 
                 Image(systemName: "music.note")
                     .font(.system(size: 72, weight: .light))
-                    .foregroundStyle(Color.white.opacity(0.7))
+                    .foregroundStyle(Color.playerArtworkIcon)
             }
             .aspectRatio(1, contentMode: .fit)
             .frame(maxHeight: 340)
@@ -329,7 +329,7 @@ struct NowPlayingView: View {
 
                         Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 30, weight: .bold))
-                            .foregroundStyle(Color.black)
+                            .foregroundStyle(Color.playerTextInverse)
                     }
                 }
                 .buttonStyle(PressScaleButtonStyle())
@@ -445,6 +445,5 @@ struct PlaylistPickerSheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
