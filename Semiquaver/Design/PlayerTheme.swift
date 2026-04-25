@@ -4,8 +4,8 @@ extension Color {
     static let playerBackground = Color(red: 0.05, green: 0.05, blue: 0.06)
     static let playerSurface = Color(red: 0.08, green: 0.08, blue: 0.10)
     static let playerSurfaceElevated = Color(red: 0.11, green: 0.11, blue: 0.14)
-    static let playerAccent = Color(red: 1.0, green: 0.70, blue: 0.20)
-    static let playerAccentMuted = Color(red: 1.0, green: 0.70, blue: 0.20).opacity(0.3)
+    static let playerAccent = Color(red: 0.98, green: 0.14, blue: 0.20)
+    static let playerAccentMuted = Color(red: 0.98, green: 0.14, blue: 0.20).opacity(0.3)
     static let playerTextPrimary = Color.white
     static let playerTextSecondary = Color.white.opacity(0.50)
     static let playerTextTertiary = Color.white.opacity(0.30)
