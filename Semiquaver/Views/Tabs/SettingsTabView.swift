@@ -1,12 +1,10 @@
 import SwiftUI
 
 struct SettingsTabView: View {
-    @State private var playVideoFullscreen = true
-    @State private var enableTextScrolling = false
-    @State private var rememberPlayerState = true
-    @State private var restoreLastPlayedMedia = false
-    @State private var showFilesOpenHelp = false
     @ObservedObject var player: AudioPlayerController
+    @AppStorage("appTheme") private var appTheme: AppTheme = .automatic
+    @State private var showThemePicker = false
+    @State private var showFilesOpenHelp = false
 
     var body: some View {
         ZStack {
@@ -19,10 +17,15 @@ struct SettingsTabView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         sectionHeader("Appearance")
 
-                        SettingsLinkRow(
-                            title: "Theme",
-                            subtitle: "Automatic"
-                        )
+                        Button {
+                            showThemePicker = true
+                        } label: {
+                            SettingsLinkRow(
+                                title: "Theme",
+                                subtitle: appTheme.displayName
+                            )
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
 
                         Divider().overlay(Color.playerDivider)
 
@@ -38,43 +41,6 @@ struct SettingsTabView: View {
 
                         Divider().overlay(Color.playerDivider)
 
-                        SettingsToggleRow(
-                            title: "Repeat mode",
-                            subtitle: "Current: \(player.repeatMode.rawValue)",
-                            isOn: .constant(false)
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsToggleRow(
-                            title: "Play video fullscreen",
-                            subtitle: nil,
-                            isOn: $playVideoFullscreen
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsLinkRow(
-                            title: "Default playback speed",
-                            subtitle: "1.00x"
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsToggleRow(
-                            title: "Remember player state",
-                            subtitle: "Shuffle and loop settings",
-                            isOn: $rememberPlayerState
-                        )
-
-                        Divider().overlay(Color.playerDivider)
-
-                        SettingsToggleRow(
-                            title: "Restore last played media",
-                            subtitle: "On app launch",
-                            isOn: $restoreLastPlayedMedia
-                        )
-
                         sectionGap
 
                         sectionHeader("Support")
@@ -83,6 +49,8 @@ struct SettingsTabView: View {
                             title: "Make a Donation",
                             subtitle: "Support free and open source multimedia"
                         )
+
+                        Divider().overlay(Color.playerDivider)
 
                         sectionGap
 
@@ -100,14 +68,20 @@ struct SettingsTabView: View {
 
                         Divider().overlay(Color.playerDivider)
 
-                        SettingsLinkRow(
-                            title: "Privacy Policy",
-                            subtitle: nil
-                        )
+                        Link(destination: URL(string: "https://github.com/rcsn01/Semiquaver")!) {
+                            SettingsLinkRow(
+                                title: "Privacy Policy",
+                                subtitle: nil
+                            )
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
                     }
                     .padding(.bottom, 32)
                 }
             }
+        }
+        .sheet(isPresented: $showThemePicker) {
+            themePickerSheet
         }
         .alert("Open Files to View Library", isPresented: $showFilesOpenHelp) {
             Button("OK", role: .cancel) { }
@@ -127,6 +101,46 @@ struct SettingsTabView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 16)
+    }
+
+    private var themePickerSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color.playerBackground.ignoresSafeArea()
+
+                List {
+                    ForEach(AppTheme.allCases, id: \.self) { theme in
+                        Button {
+                            appTheme = theme
+                            showThemePicker = false
+                        } label: {
+                            HStack {
+                                Text(theme.displayName)
+                                    .foregroundStyle(Color.playerTextPrimary)
+                                Spacer()
+                                if appTheme == theme {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(Color.playerAccent)
+                                }
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Theme")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showThemePicker = false
+                    }
+                    .foregroundStyle(Color.playerAccent)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
     }
 
     private func sectionHeader(_ title: String) -> some View {
