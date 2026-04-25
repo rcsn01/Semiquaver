@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PlaylistsTabView: View {
     @StateObject private var playlistStorage = PlaylistStorage()
+    @ObservedObject var player: AudioPlayerController
+    @Binding var showNowPlayingFullScreen: Bool
     @State private var showingCreatePlaylist = false
     @State private var newPlaylistTitle = ""
 
@@ -11,27 +13,34 @@ struct PlaylistsTabView: View {
             trailingSystemImage: "plus",
             trailingAction: { showingCreatePlaylist = true }
         ) {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    ForEach(playlistStorage.playlists) { playlist in
-                        Button {
-                            // TODO: Navigate to playlist detail
-                        } label: {
-                            PlaylistRow(playlist: playlist)
-                                .padding(.horizontal, 4)
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
+            NavigationStack {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(playlistStorage.playlists) { playlist in
+                            NavigationLink {
+                                PlaylistDetailView(
+                                    playlist: playlist,
+                                    allTracks: [],
+                                    player: player,
+                                    showNowPlayingFullScreen: $showNowPlayingFullScreen
+                                )
+                            } label: {
+                                PlaylistRow(playlist: playlist)
+                                    .padding(.horizontal, 4)
+                            }
+                            .buttonStyle(PressScaleButtonStyle())
 
-                        if playlist.id != playlistStorage.playlists.last?.id {
-                            Divider()
-                                .overlay(Color.playerDivider)
-                                .padding(.leading, 76)
+                            if playlist.id != playlistStorage.playlists.last?.id {
+                                Divider()
+                                    .overlay(Color.playerDivider)
+                                    .padding(.leading, 76)
+                            }
                         }
                     }
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
+                    .padding(.horizontal, 12)
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 32)
-                .padding(.horizontal, 12)
             }
         }
         .alert("New Playlist", isPresented: $showingCreatePlaylist) {

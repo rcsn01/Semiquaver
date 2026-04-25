@@ -10,6 +10,7 @@ struct NowPlayingView: View {
     @State private var showAddToPlaylistSheet = false
     @State private var showRemoveFromPlaylistSheet = false
     @State private var showDeleteConfirmation = false
+    @State private var showQueueSheet = false
     @State private var errorMessage: String?
 
     private var artworkImage: UIImage? {
@@ -78,6 +79,9 @@ struct NowPlayingView: View {
                     showRemoveFromPlaylistSheet = true
                 }
             }
+            Button("Add to Queue") {
+                player.addToQueue(track)
+            }
             Button("Delete Song", role: .destructive) {
                 showDeleteConfirmation = true
             }
@@ -96,6 +100,9 @@ struct NowPlayingView: View {
                 playlistStorage: playlistStorage,
                 mode: .remove
             )
+        }
+        .sheet(isPresented: $showQueueSheet) {
+            QueueListView(player: player)
         }
         .alert("Delete Song", isPresented: $showDeleteConfirmation) {
             Button("Delete", role: .destructive) {
@@ -143,9 +150,9 @@ struct NowPlayingView: View {
             Spacer()
 
             Button {
-                showActionSheet = true
+                showQueueSheet = true
             } label: {
-                Image(systemName: "ellipsis")
+                Image(systemName: "list.bullet")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color.playerTextSecondary)
                     .frame(width: 44, height: 44)
@@ -254,14 +261,22 @@ struct NowPlayingView: View {
 
     private var controlsSection: some View {
         VStack(spacing: 32) {
+            // Context info
+            Text(player.playbackContext.shortName)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.playerTextTertiary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, 20)
+
             // Secondary controls
             HStack(spacing: 32) {
                 Button {
-                    player.shuffleEnabled.toggle()
+                    player.shuffleQueue()
                 } label: {
                     Image(systemName: "shuffle")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(player.shuffleEnabled ? Color.playerAccent : Color.playerTextTertiary)
+                        .foregroundStyle(Color.playerAccent)
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(PressScaleButtonStyle())
@@ -293,15 +308,15 @@ struct NowPlayingView: View {
             // Primary controls
             HStack(spacing: 36) {
                 Button {
-                    player.playPrevious(from: player.libraryTracks)
+                    player.playPrevious()
                 } label: {
                     Image(systemName: "backward.fill")
                         .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(player.libraryTracks.isEmpty ? Color.playerTextTertiary : Color.playerTextPrimary)
+                        .foregroundStyle(!player.playbackHistory.isEmpty ? Color.playerTextPrimary : Color.playerTextTertiary)
                         .frame(width: 56, height: 56)
                 }
                 .buttonStyle(PressScaleButtonStyle())
-                .disabled(player.libraryTracks.isEmpty)
+                .disabled(player.playbackHistory.isEmpty)
 
                 Button {
                     player.togglePlayPause()
@@ -320,15 +335,15 @@ struct NowPlayingView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    player.playNext(from: player.libraryTracks)
+                    player.playNext()
                 } label: {
                     Image(systemName: "forward.fill")
                         .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(player.libraryTracks.isEmpty ? Color.playerTextTertiary : Color.playerTextPrimary)
+                        .foregroundStyle(!player.playbackQueue.isEmpty ? Color.playerTextPrimary : Color.playerTextTertiary)
                         .frame(width: 56, height: 56)
                 }
                 .buttonStyle(PressScaleButtonStyle())
-                .disabled(player.libraryTracks.isEmpty)
+                .disabled(player.playbackQueue.isEmpty)
             }
         }
     }

@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct SettingsTabView: View {
     @State private var playVideoFullscreen = true
@@ -7,6 +6,7 @@ struct SettingsTabView: View {
     @State private var rememberPlayerState = true
     @State private var restoreLastPlayedMedia = false
     @State private var showFilesOpenHelp = false
+    @ObservedObject var player: AudioPlayerController
 
     var body: some View {
         ZStack {
@@ -18,7 +18,7 @@ struct SettingsTabView: View {
                 ScrollView(showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 0) {
                         sectionHeader("Appearance")
-                        
+
                         SettingsLinkRow(
                             title: "Theme",
                             subtitle: "Automatic"
@@ -28,16 +28,23 @@ struct SettingsTabView: View {
 
                         sectionGap
 
-                        sectionHeader("Support")
+                        sectionHeader("Playback")
 
-                        SettingsLinkRow(
-                            title: "Make a Donation",
-                            subtitle: "Support free and open source multimedia"
+                        SettingsToggleRow(
+                            title: "Shuffle new queues",
+                            subtitle: "Automatically shuffle when starting new playback",
+                            isOn: $player.shuffleByDefault
                         )
 
-                        sectionGap
+                        Divider().overlay(Color.playerDivider)
 
-                        sectionHeader("Playback")
+                        SettingsToggleRow(
+                            title: "Repeat mode",
+                            subtitle: "Current: \(player.repeatMode.rawValue)",
+                            isOn: .constant(false)
+                        )
+
+                        Divider().overlay(Color.playerDivider)
 
                         SettingsToggleRow(
                             title: "Play video fullscreen",
@@ -66,6 +73,15 @@ struct SettingsTabView: View {
                             title: "Restore last played media",
                             subtitle: "On app launch",
                             isOn: $restoreLastPlayedMedia
+                        )
+
+                        sectionGap
+
+                        sectionHeader("Support")
+
+                        SettingsLinkRow(
+                            title: "Make a Donation",
+                            subtitle: "Support free and open source multimedia"
                         )
 
                         sectionGap
