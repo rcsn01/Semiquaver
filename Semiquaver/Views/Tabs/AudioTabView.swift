@@ -1,16 +1,16 @@
 import SwiftUI
 
 enum AudioCategory: String, CaseIterable {
+    case all = "All"
     case artists = "Artists"
     case albums = "Albums"
-    case songs = "Songs"
 }
 
 struct AudioTabView: View {
     @ObservedObject var library: AppMusicLibrary
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlayingFullScreen: Bool
-    @State private var selectedCategory: AudioCategory = .songs
+    @State private var selectedCategory: AudioCategory = .all
 
     var body: some View {
         NavigationStack {
@@ -135,7 +135,7 @@ struct AudioTabView: View {
                     .padding(.horizontal, 12)
                     .padding(.bottom, 12)
                 }
-            case .songs:
+            case .all:
                 List {
                     songRows(for: library.songs)
                 }
