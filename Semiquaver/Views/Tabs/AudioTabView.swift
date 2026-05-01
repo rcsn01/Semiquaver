@@ -11,7 +11,7 @@ struct AudioTabView: View {
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlayingFullScreen: Bool
     @State private var selectedCategory: AudioCategory = .all
-
+ 
     var body: some View {
         NavigationStack {
             ZStack {
