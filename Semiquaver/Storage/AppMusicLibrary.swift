@@ -75,7 +75,7 @@ final class AppMusicLibrary: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        if !force, let cachedTracks = Self.loadCache() {
+        if !force, let cachedTracks = Self.loadCache(relativeTo: musicFolderURL) {
             tracks = cachedTracks
             isLoading = false
 
@@ -106,14 +106,14 @@ final class AppMusicLibrary: ObservableObject {
         return documentsURL.appendingPathComponent("library_cache.json")
     }
 
-    private nonisolated static func loadCache() -> [AudioTrack]? {
+    private nonisolated static func loadCache(relativeTo musicFolderURL: URL) -> [AudioTrack]? {
         guard let url = cacheURL(), FileManager.default.fileExists(atPath: url.path) else {
             return nil
         }
         do {
             let data = try Data(contentsOf: url)
             let tracks = try JSONDecoder().decode([AudioTrack].self, from: data)
-            return tracks
+            return tracks.compactMap { rebaseCachedTrack($0, to: musicFolderURL) }
         } catch {
             print("Failed to load library cache: \(error)")
             return nil
@@ -128,6 +128,50 @@ final class AppMusicLibrary: ObservableObject {
         } catch {
             print("Failed to save library cache: \(error)")
         }
+    }
+
+    private nonisolated static func rebaseCachedTrack(_ track: AudioTrack, to musicFolderURL: URL) -> AudioTrack? {
+        let fileManager = FileManager.default
+
+        if fileManager.fileExists(atPath: track.fileURL.path) {
+            return track
+        }
+
+        guard let relativePath = cachedRelativePath(for: track.fileURL) else {
+            return nil
+        }
+
+        let rebasedURL = musicFolderURL.appendingPathComponent(relativePath)
+        guard fileManager.fileExists(atPath: rebasedURL.path) else {
+            return nil
+        }
+
+        return AudioTrack(
+            id: rebasedURL.path,
+            fileURL: rebasedURL,
+            title: track.title,
+            artist: track.artist,
+            album: track.album,
+            genre: track.genre,
+            duration: track.duration,
+            artworkData: track.artworkData,
+            lastModified: track.lastModified
+        )
+    }
+
+    private nonisolated static func cachedRelativePath(for fileURL: URL) -> String? {
+        let musicFolderName = "Music"
+        let pathComponents = fileURL.pathComponents
+        guard let musicIndex = pathComponents.firstIndex(of: musicFolderName) else {
+            return nil
+        }
+
+        let relativeComponents = pathComponents.dropFirst(musicIndex + 1)
+        guard !relativeComponents.isEmpty else {
+            return nil
+        }
+
+        return relativeComponents.joined(separator: "/")
     }
 
     private nonisolated static func incrementalScan(in directoryURL: URL, existingTracks: [AudioTrack]) async -> [AudioTrack] {

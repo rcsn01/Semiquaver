@@ -3,6 +3,7 @@ import SwiftUI
 struct NowPlayingView: View {
     let track: AudioTrack
     @ObservedObject var player: AudioPlayerController
+    @ObservedObject var library: AppMusicLibrary
     @Environment(\.dismiss) private var dismiss
     @StateObject private var playlistStorage = PlaylistStorage()
     @State private var dragOffset: CGFloat = 0
@@ -12,6 +13,7 @@ struct NowPlayingView: View {
     @State private var showDeleteConfirmation = false
     @State private var showQueueSheet = false
     @State private var errorMessage: String?
+    @State private var isShuffleHighlighted = false
 
     private var artworkImage: UIImage? {
         if let data = track.artworkData {
@@ -123,21 +125,10 @@ struct NowPlayingView: View {
 
     private var header: some View {
         HStack {
-            Button {
+            headerButton(systemImage: "chevron.down") {
                 dismiss()
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color.playerTextSecondary)
-                    .frame(width: 44, height: 44)
-                    .background(Color.playerGlass)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.playerGlassBorder, lineWidth: 0.5)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .buttonStyle(PressScaleButtonStyle())
+            .frame(width: 100, alignment: .leading)
 
             Spacer()
 
@@ -149,21 +140,16 @@ struct NowPlayingView: View {
 
             Spacer()
 
-            Button {
-                showQueueSheet = true
-            } label: {
-                Image(systemName: "list.bullet")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color.playerTextSecondary)
-                    .frame(width: 44, height: 44)
-                    .background(Color.playerGlass)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.playerGlassBorder, lineWidth: 0.5)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            HStack(spacing: 12) {
+                headerButton(systemImage: "trash", foregroundColor: Color.playerAccent) {
+                    showDeleteConfirmation = true
+                }
+
+                headerButton(systemImage: "list.bullet") {
+                    showQueueSheet = true
+                }
             }
-            .buttonStyle(PressScaleButtonStyle())
+            .frame(width: 100, alignment: .trailing)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -272,11 +258,12 @@ struct NowPlayingView: View {
             // Secondary controls
             HStack(spacing: 32) {
                 Button {
+                    flashShuffleButton()
                     player.shuffleQueue()
                 } label: {
                     Image(systemName: "shuffle")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Color.playerAccent)
+                        .foregroundStyle(isShuffleHighlighted ? Color.playerAccent : Color.playerTextSecondary)
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(PressScaleButtonStyle())
@@ -358,11 +345,43 @@ struct NowPlayingView: View {
         }
     }
 
+    private func flashShuffleButton() {
+        withAnimation(.easeOut(duration: 0.12)) {
+            isShuffleHighlighted = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.easeIn(duration: 0.18)) {
+                isShuffleHighlighted = false
+            }
+        }
+    }
+
     private func formatTime(_ time: TimeInterval) -> String {
         let totalSeconds = max(Int(time.rounded()), 0)
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func headerButton(
+        systemImage: String,
+        foregroundColor: Color = Color.playerTextSecondary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+                .frame(width: 44, height: 44)
+                .background(Color.playerGlass)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private func deleteTrack() {
@@ -375,6 +394,9 @@ struct NowPlayingView: View {
             // Stop playback if this is the current track
             if player.currentTrack?.id == track.id {
                 player.stop()
+            }
+            Task {
+                await library.reload(force: true)
             }
             dismiss()
         } catch {

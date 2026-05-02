@@ -59,7 +59,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showNowPlayingFullScreen) {
             if let currentTrack = player.currentTrack {
-                NowPlayingView(track: currentTrack, player: player)
+                NowPlayingView(track: currentTrack, player: player, library: library)
             }
         }
         .alert("Playback Error", isPresented: playbackErrorBinding) {

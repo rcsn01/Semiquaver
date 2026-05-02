@@ -206,12 +206,13 @@ struct AudioTabView: View {
         ForEach(songs) { track in
             VStack(spacing: 0) {
                 Button {
-                    player.play(
+                    if player.play(
                         track: track,
                         in: library.songs,
                         context: .library
-                    )
-                    showNowPlayingFullScreen = true
+                    ) {
+                        showNowPlayingFullScreen = true
+                    }
                 } label: {
                     MediaRow(
                         item: track.mediaItem(

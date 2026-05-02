@@ -67,8 +67,9 @@ struct GenreDetailView: View {
         ForEach(tracks) { track in
             VStack(spacing: 0) {
                 Button {
-                    player.play(track: track, in: tracks, context: .genre(genreName))
-                    showNowPlayingFullScreen = true
+                    if player.play(track: track, in: tracks, context: .genre(genreName)) {
+                        showNowPlayingFullScreen = true
+                    }
                 } label: {
                     MediaRow(
                         item: track.mediaItem(
