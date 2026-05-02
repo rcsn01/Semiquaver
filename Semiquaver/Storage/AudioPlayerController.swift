@@ -46,7 +46,8 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     // MARK: - Playback
 
-    func play(track: AudioTrack, in queue: [AudioTrack], context: PlaybackContext) {
+    @discardableResult
+    func play(track: AudioTrack, in queue: [AudioTrack], context: PlaybackContext) -> Bool {
         playbackContext = context
         playbackHistory = []
 
@@ -63,7 +64,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
             playbackQueue = [track]
         }
 
-        play(track)
+        return play(track)
     }
 
     func addToQueue(_ track: AudioTrack) {
@@ -208,19 +209,31 @@ final class AudioPlayerController: NSObject, ObservableObject {
 
     func shuffleQueue() {
         guard let current = currentTrack else { return }
+        let queuePool = deduplicatedTracks(from: playbackHistory + [current] + playbackQueue)
 
-        if let first = playbackQueue.first, first.id == current.id {
-            let tail = Array(playbackQueue.dropFirst())
-            playbackQueue = [current] + tail.shuffled()
-        } else {
-            // If current is not first, just shuffle what we have
-            playbackQueue = playbackQueue.shuffled()
+        guard queuePool.count > 1 else { return }
+
+        guard let nextTrack = queuePool
+            .filter({ $0.id != current.id })
+            .randomElement() else {
+            return
         }
+
+        var remainingTracks = queuePool.filter { $0.id != nextTrack.id }
+        remainingTracks.shuffle()
+
+        // Treat shuffle as a fresh playback order built from the full queue list.
+        playbackHistory = []
+        playbackQueue = [nextTrack] + remainingTracks
+        play(nextTrack)
     }
 
     // MARK: - Private
 
-    private func play(_ track: AudioTrack) {
+    @discardableResult
+    private func play(_ track: AudioTrack) -> Bool {
+        errorMessage = nil
+
         do {
             try configureAudioSession()
 
@@ -238,9 +251,15 @@ final class AudioPlayerController: NSObject, ObservableObject {
             startProgressTimer()
             updateNowPlayingInfo()
             updateRemoteCommandAvailability()
+            return true
         } catch {
+            let fileManager = FileManager.default
+            let isReachable = fileManager.fileExists(atPath: track.fileURL.path)
+            let fileExtension = track.fileURL.pathExtension.lowercased()
+            print("Playback failed for \(track.fileURL.lastPathComponent) [\(fileExtension)] reachable=\(isReachable) path=\(track.fileURL.path) error=\(error.localizedDescription)")
             errorMessage = error.localizedDescription
             isPlaying = false
+            return false
         }
     }
 
@@ -248,6 +267,14 @@ final class AudioPlayerController: NSObject, ObservableObject {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playback, mode: .default, options: [])
         try session.setActive(true)
+    }
+
+    private func deduplicatedTracks(from tracks: [AudioTrack]) -> [AudioTrack] {
+        var seenTrackIDs = Set<String>()
+
+        return tracks.filter { track in
+            seenTrackIDs.insert(track.id).inserted
+        }
     }
 
     // MARK: - Timer
