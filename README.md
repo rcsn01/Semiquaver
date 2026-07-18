@@ -4,10 +4,10 @@ Semiquaver is an iOS app project built with Xcode.
 
 ## Building an IPA for SideStore
 
-SideStore can install an unsigned `.ipa` and sign it during installation. For this project, the recommended output is:
+SideStore can install an unsigned `.ipa` and sign it during installation. For this project, the output is:
 
 ```text
-build/Semiquaver-SideStore.ipa
+build/Semiquaver.ipa
 ```
 
 The app currently builds with:
@@ -47,52 +47,39 @@ mkdir -p /tmp/SemiquaverIPA/Payload
 ditto DerivedData/Build/Products/Release-iphoneos/Semiquaver.app /tmp/SemiquaverIPA/Payload/Semiquaver.app
 mkdir -p build
 cd /tmp/SemiquaverIPA
-zip -qry -X /Users/mac/Syncthing/Projects/Semiquaver/build/Semiquaver-SideStore.ipa Payload
+zip -qry -FS -X /Users/mac/Syncthing/Projects/Semiquaver/build/Semiquaver.ipa Payload
 ```
 
 The final file is:
 
 ```text
-build/Semiquaver-SideStore.ipa
+build/Semiquaver.ipa
 ```
 
 Load this file in SideStore.
 
-## Existing IPA Files
+## IPA Packaging
 
-Two IPA files may exist in `build/`:
-
-```text
-build/Semiquaver-SideStore.ipa
-build/Semiquaver.ipa
-```
-
-Both are made from the same app bundle:
-
-```text
-DerivedData/Build/Products/Release-iphoneos/Semiquaver.app
-```
-
-Use `Semiquaver-SideStore.ipa` for SideStore. It is a clean zip containing only:
+`Semiquaver.ipa` is a clean zip containing only the standard IPA payload:
 
 ```text
 Payload/Semiquaver.app
 ```
 
-`Semiquaver.ipa` was created with Apple `ditto` zip packaging:
+It is made from this app bundle:
 
-```sh
-ditto -c -k --sequesterRsrc --keepParent Payload build/Semiquaver.ipa
+```text
+DerivedData/Build/Products/Release-iphoneos/Semiquaver.app
 ```
 
-That version includes extra macOS archive metadata such as `__MACOSX/` and `._Info.plist`. This usually does no harm, but it is not useful for SideStore and can confuse stricter IPA parsers.
+The `zip -FS -X` packaging command removes stale archive entries and excludes macOS extended attributes and resource-fork metadata such as `__MACOSX/` and `._Info.plist`.
 
 ## How to Get the IPA File
 
 After generating the IPA, get it from the project directory:
 
 ```text
-/Users/mac/Syncthing/Projects/Semiquaver/build/Semiquaver-SideStore.ipa
+/Users/mac/Syncthing/Projects/Semiquaver/build/Semiquaver.ipa
 ```
 
 Because `build/` and `DerivedData/` are generated Xcode output directories, they are ignored by git and can be recreated with the commands above.
