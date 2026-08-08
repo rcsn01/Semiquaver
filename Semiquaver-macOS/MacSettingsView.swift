@@ -16,12 +16,6 @@ struct MacSettingsView: View {
             Form {
                 Toggle("Shuffle new queues by default", isOn: $shuffleByDefault)
                     .onChange(of: shuffleByDefault) { _, value in model.player.shuffleByDefault = value }
-                Picker("Repeat", selection: Binding(
-                    get: { model.player.repeatMode },
-                    set: { model.player.repeatMode = $0 }
-                )) {
-                    ForEach(RepeatMode.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) }
-                }
             }.padding(20).tabItem { Label("Playback", systemImage: "play.circle") }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -47,7 +41,9 @@ struct MacSettingsView: View {
             }.padding(20).tabItem { Label("Library", systemImage: "folder") }
 
             Form {
-                Link("Semiquaver Support", destination: URL(string: "https://github.com/opense")!)
+                Link("Make a Donation", destination: URL(string: "https://github.com/rcsn01/Semiquaver")!)
+                Link("Privacy Policy", destination: URL(string: "https://github.com/rcsn01/Semiquaver")!)
+                Link("Semiquaver Support", destination: URL(string: "https://github.com/rcsn01/Semiquaver")!)
             }.padding(20).tabItem { Label("Support", systemImage: "questionmark.circle") }
         }
         .frame(width: 680, height: 430)

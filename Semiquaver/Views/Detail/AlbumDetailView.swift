@@ -8,13 +8,6 @@ struct AlbumDetailView: View {
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlayingFullScreen: Bool
 
-    private var artworkImage: UIImage? {
-        if let artworkData {
-            return UIImage(data: artworkData)
-        }
-        return nil
-    }
-
     var body: some View {
         ZStack {
             PlayerBackground()
@@ -41,31 +34,12 @@ struct AlbumDetailView: View {
 
     private var albumHeader: some View {
         VStack(spacing: 20) {
-            if let artworkImage {
-                Image(uiImage: artworkImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 200, height: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .shadow(color: Color.playerShadow, radius: 24, x: 0, y: 12)
-            } else {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: MediaArtworkPalette.colors(for: "\(artistName)::\(albumTitle)"),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 200, height: 200)
-                        .shadow(color: Color.playerShadow, radius: 24, x: 0, y: 12)
-
-                    Image(systemName: "square.stack.fill")
-                        .font(.system(size: 72, weight: .light))
-                        .foregroundStyle(Color.playerArtworkIcon)
-                }
-            }
+            ArtworkView(
+                data: artworkData,
+                seed: "\(artistName)::\(albumTitle)",
+                systemImage: "square.stack.fill",
+                size: 200
+            )
 
             VStack(spacing: 6) {
                 Text(albumTitle)

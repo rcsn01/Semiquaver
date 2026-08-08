@@ -9,8 +9,10 @@ enum AudioCategory: String, CaseIterable {
 struct AudioTabView: View {
     @ObservedObject var library: AppMusicLibrary
     @ObservedObject var player: AudioPlayerController
+    @ObservedObject var playlists: PlaylistStorage
     @Binding var showNowPlayingFullScreen: Bool
     @State private var selectedCategory: AudioCategory = .all
+    @State private var searchText = ""
  
     var body: some View {
         NavigationStack {
@@ -29,6 +31,7 @@ struct AudioTabView: View {
                 }
             }
         }
+        .searchable(text: $searchText, prompt: "Songs, artists, albums, genres")
     }
 
     // MARK: - Header
@@ -124,9 +127,17 @@ struct AudioTabView: View {
                     LazyVStack(spacing: 0) {
                         switch selectedCategory {
                         case .artists:
-                            artistRows(for: library.artists)
+                            artistRows(for: LibrarySearch.groups(
+                                library.artists,
+                                tracksForGroup: { library.tracksByArtist[$0.title] ?? [] },
+                                matching: searchText
+                            ))
                         case .albums:
-                            albumRows(for: library.albums)
+                            albumRows(for: LibrarySearch.groups(
+                                library.albums,
+                                tracksForGroup: { library.tracksByAlbumID[String($0.id.dropFirst("album::".count))] ?? [] },
+                                matching: searchText
+                            ))
                         default:
                             EmptyView()
                         }
@@ -137,7 +148,7 @@ struct AudioTabView: View {
                 }
             case .all:
                 List {
-                    songRows(for: library.songs)
+                    songRows(for: LibrarySearch.tracks(library.songs, matching: searchText))
                 }
                 .listStyle(.plain)
                 .scrollIndicators(.hidden)
@@ -177,7 +188,7 @@ struct AudioTabView: View {
 
     private func albumRows(for summaries: [AudioGroupSummary]) -> some View {
         ForEach(summaries) { summary in
-            let albumTracks = library.tracksByAlbumID[summary.id] ?? []
+            let albumTracks = library.tracksByAlbumID[String(summary.id.dropFirst("album::".count))] ?? []
 
             NavigationLink {
                 AlbumDetailView(
@@ -225,6 +236,23 @@ struct AudioTabView: View {
                     .padding(.horizontal, 4)
                 }
                 .buttonStyle(PressScaleButtonStyle())
+                .contextMenu {
+                    Button("Play", systemImage: "play.fill") {
+                        player.play(track: track, in: songs, context: .library)
+                    }
+                    Button("Add to Queue", systemImage: "text.line.first.and.arrowtriangle.forward") {
+                        player.addToQueue(track)
+                    }
+                    Menu("Add to Playlist") {
+                        ForEach(playlists.playlists) { playlist in
+                            if playlist.trackIDs.contains(track.id) {
+                                Button("Remove from \(playlist.title)") { playlists.removeTrack(track.id, from: playlist) }
+                            } else {
+                                Button(playlist.title) { playlists.addTrack(track.id, to: playlist) }
+                            }
+                        }
+                    }
+                }
 
                 if track.id != songs.last?.id {
                     Divider()

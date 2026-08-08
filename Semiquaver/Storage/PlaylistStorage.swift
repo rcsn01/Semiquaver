@@ -14,10 +14,25 @@ final class PlaylistStorage: ObservableObject, @unchecked Sendable {
 
     // MARK: - CRUD
 
-    func createPlaylist(title: String) {
+    @discardableResult
+    func createPlaylist(title: String) -> Bool {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return false }
         let playlist = PlaylistItem(title: title, detail: "0 songs", trackIDs: [])
         playlists.append(playlist)
         save()
+        return true
+    }
+
+    @discardableResult
+    func renamePlaylist(id: UUID, title: String) -> Bool {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, let index = playlists.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+        playlists[index].title = title
+        save()
+        return true
     }
 
     func deletePlaylist(_ playlist: PlaylistItem) {
@@ -54,8 +69,9 @@ final class PlaylistStorage: ObservableObject, @unchecked Sendable {
     private func save() {
         guard let url = fileURL else { return }
         do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             let data = try JSONEncoder().encode(playlists)
-            try data.write(to: url)
+            try data.write(to: url, options: .atomic)
         } catch {
             print("Failed to save playlists: \(error.localizedDescription)")
         }

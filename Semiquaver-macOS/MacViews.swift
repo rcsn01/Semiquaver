@@ -1,16 +1,11 @@
 import AppKit
 import SwiftUI
 
-enum MacSidebarSelection: Hashable {
-    case songs, artists, albums
-    case playlist(UUID)
-}
-
 struct MacContentView: View {
     @ObservedObject var model: MacAppModel
     @ObservedObject private var player: AudioPlayerController
     @ObservedObject private var library: AppMusicLibrary
-    @State private var selection: MacSidebarSelection? = .songs
+    @State private var selection: LibraryDestination? = .songs
     @State private var searchText = ""
     @FocusState private var searchFocused: Bool
     @State private var showNowPlaying = false
@@ -27,23 +22,31 @@ struct MacContentView: View {
                 MacSidebar(selection: $selection, playlists: model.playlists)
                     .navigationSplitViewColumnWidth(min: 180, ideal: 215)
             } detail: {
-                detail
+                NavigationStack { detail }
                     .searchable(text: $searchText, placement: .toolbar, prompt: "Songs, artists, albums, genres")
                     .searchFocused($searchFocused)
                     .onReceive(NotificationCenter.default.publisher(for: .focusLibrarySearch)) { _ in searchFocused = true }
                     .inspector(isPresented: $model.isQueueVisible) {
-                        MacQueueView(player: player).inspectorColumnWidth(min: 260, ideal: 320, max: 400)
+                        NavigationStack { QueueContent(player: player, layoutMode: .expanded) }
+                            .inspectorColumnWidth(min: 280, ideal: 330, max: 420)
                     }
             }
             Divider()
-            MacPlayerBar(player: player, showNowPlaying: $showNowPlaying, showQueue: $model.isQueueVisible)
+            MacExpandedPlayer(player: player, showNowPlaying: $showNowPlaying, showQueue: $model.isQueueVisible)
         }
+        .tint(.playerAccent)
         .frame(minWidth: 760, minHeight: 520)
         .task { await model.start() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { await model.rescan() }
         }
-        .sheet(isPresented: $showNowPlaying) { MacNowPlayingView(player: player) }
+        .sheet(isPresented: $showNowPlaying) {
+            NowPlayingContent(player: player, playlists: model.playlists, layoutMode: .expanded) {
+                showNowPlaying = false
+                model.isQueueVisible = true
+            }
+            .frame(width: 460, height: 590)
+        }
         .alert("Move to Trash?", isPresented: Binding(get: { model.trackPendingTrash != nil }, set: { if !$0 { model.trackPendingTrash = nil } })) {
             Button("Move to Trash", role: .destructive) { model.confirmTrash() }
             Button("Cancel", role: .cancel) { model.trackPendingTrash = nil }
@@ -55,64 +58,82 @@ struct MacContentView: View {
 
     @ViewBuilder private var detail: some View {
         if model.locations.records.isEmpty {
-            ContentUnavailableView("Choose Your Music Folders", systemImage: "music.note.house",
-                                   description: Text("Semiquaver plays files in place. Your music is never copied."))
-                .toolbar { Button("Choose Music Folders", systemImage: "folder.badge.plus") { model.chooseFolders() } }
+            SemiquaverUnavailableState(
+                title: "Choose Your Music Folders",
+                message: "Semiquaver plays files in place. Your music is never copied.",
+                systemImage: "music.note.house"
+            )
+            .toolbar { Button("Choose Music Folders", systemImage: "folder.badge.plus") { model.chooseFolders() } }
         } else if library.isLoading && library.tracks.isEmpty {
-            ProgressView("Scanning music…")
+            SemiquaverLoadingState()
+        } else if let error = library.errorMessage {
+            SemiquaverUnavailableState(title: "Library Unavailable", message: error, systemImage: "externaldrive.badge.exclamationmark")
         } else {
             switch selection ?? .songs {
             case .songs:
-                MacTrackList(title: "Songs", tracks: filtered(library.songs), context: .library, model: model)
+                MacTrackList(title: "Songs", tracks: LibrarySearch.tracks(library.songs, matching: searchText), context: .library, model: model, searchActive: !LibrarySearch.normalized(searchText).isEmpty)
             case .artists:
-                let mapped = Dictionary(uniqueKeysWithValues: library.artists.map { ($0.id, library.tracksByArtist[$0.title] ?? []) })
-                MacGroupedList(title: "Artists", groups: library.artists, tracks: mapped, searchText: searchText, model: model)
+                MacGroupList(title: "Artists", groups: library.artists, searchText: searchText, model: model)
             case .albums:
-                let mapped = Dictionary(uniqueKeysWithValues: library.albums.map { ($0.id, library.tracksByAlbumID[String($0.id.dropFirst("album::".count))] ?? []) })
-                MacGroupedList(title: "Albums", groups: library.albums, tracks: mapped, searchText: searchText, model: model)
+                MacGroupList(title: "Albums", groups: library.albums, searchText: searchText, model: model)
             case .playlist(let id):
                 if let playlist = model.playlists.playlists.first(where: { $0.id == id }) {
-                    let ids = Set(playlist.trackIDs)
-                    let playlistTracks = library.tracks.filter { ids.contains($0.id) }
-                    let titleMatches = !searchText.isEmpty && playlist.title.localizedCaseInsensitiveContains(searchText)
-                    MacTrackList(title: playlist.title, tracks: titleMatches ? playlistTracks : filtered(playlistTracks), context: .playlist(playlist), model: model)
-                } else { ContentUnavailableView("Playlist Not Found", systemImage: "music.note.list") }
+                    MacTrackList(
+                        title: playlist.title,
+                        tracks: LibrarySearch.playlistTracks(playlist, allTracks: library.tracks, matching: searchText),
+                        context: .playlist(playlist), model: model,
+                        searchActive: !LibrarySearch.normalized(searchText).isEmpty
+                    )
+                } else {
+                    SemiquaverUnavailableState(title: "Playlist Not Found", message: "This playlist is no longer available.", systemImage: "music.note.list")
+                }
+            case .settings:
+                EmptyView()
             }
         }
-    }
-
-    private func filtered(_ tracks: [AudioTrack]) -> [AudioTrack] {
-        guard !searchText.isEmpty else { return tracks }
-        return tracks.filter { [$0.title, $0.artist, $0.album, $0.genre].contains { $0.localizedCaseInsensitiveContains(searchText) } }
     }
 }
 
 private struct MacSidebar: View {
-    @Binding var selection: MacSidebarSelection?
+    @Binding var selection: LibraryDestination?
     @ObservedObject var playlists: PlaylistStorage
-    @State private var newPlaylistName = ""
+    @State private var draftName = ""
     @State private var creatingPlaylist = false
+    @State private var renamingPlaylist: PlaylistItem?
+    @State private var deletingPlaylist: PlaylistItem?
 
     var body: some View {
         List(selection: $selection) {
             Section("Library") {
-                Label("Songs", systemImage: "music.note").tag(MacSidebarSelection.songs)
-                Label("Artists", systemImage: "music.mic").tag(MacSidebarSelection.artists)
-                Label("Albums", systemImage: "square.stack").tag(MacSidebarSelection.albums)
+                Label(LibraryDestination.songs.label, systemImage: LibraryDestination.songs.systemImage).tag(LibraryDestination.songs)
+                Label(LibraryDestination.artists.label, systemImage: LibraryDestination.artists.systemImage).tag(LibraryDestination.artists)
+                Label(LibraryDestination.albums.label, systemImage: LibraryDestination.albums.systemImage).tag(LibraryDestination.albums)
             }
             Section("Playlists") {
                 ForEach(playlists.playlists) { playlist in
-                    Label(playlist.title, systemImage: "music.note.list").tag(MacSidebarSelection.playlist(playlist.id))
-                        .contextMenu { Button("Delete", role: .destructive) { playlists.deletePlaylist(playlist) } }
+                    Label(playlist.title, systemImage: "music.note.list")
+                        .tag(LibraryDestination.playlist(playlist.id))
+                        .contextMenu {
+                            Button("Rename") { draftName = playlist.title; renamingPlaylist = playlist }
+                            Button("Delete", role: .destructive) { deletingPlaylist = playlist }
+                        }
                 }
-                Button("New Playlist", systemImage: "plus") { creatingPlaylist = true }.buttonStyle(.plain)
+                Button("New Playlist", systemImage: "plus") { draftName = ""; creatingPlaylist = true }.buttonStyle(.plain)
             }
         }
         .navigationTitle("Semiquaver")
         .alert("New Playlist", isPresented: $creatingPlaylist) {
-            TextField("Name", text: $newPlaylistName)
-            Button("Create") { if !newPlaylistName.isEmpty { playlists.createPlaylist(title: newPlaylistName); newPlaylistName = "" } }
-            Button("Cancel", role: .cancel) {}
+            TextField("Name", text: $draftName)
+            Button("Create") { _ = playlists.createPlaylist(title: draftName) }
+            Button("Cancel", role: .cancel) { }
+        }
+        .alert("Rename Playlist", isPresented: Binding(get: { renamingPlaylist != nil }, set: { if !$0 { renamingPlaylist = nil } })) {
+            TextField("Name", text: $draftName)
+            Button("Rename") { if let playlist = renamingPlaylist { _ = playlists.renamePlaylist(id: playlist.id, title: draftName) }; renamingPlaylist = nil }
+            Button("Cancel", role: .cancel) { renamingPlaylist = nil }
+        }
+        .confirmationDialog("Delete Playlist?", isPresented: Binding(get: { deletingPlaylist != nil }, set: { if !$0 { deletingPlaylist = nil } })) {
+            Button("Delete Playlist", role: .destructive) { if let playlist = deletingPlaylist { playlists.deletePlaylist(playlist) }; deletingPlaylist = nil }
         }
     }
 }
@@ -124,143 +145,115 @@ private struct MacTrackList: View {
     @ObservedObject var model: MacAppModel
     @ObservedObject private var player: AudioPlayerController
     @ObservedObject private var playlists: PlaylistStorage
+    let searchActive: Bool
 
-    init(title: String, tracks: [AudioTrack], context: PlaybackContext, model: MacAppModel) {
-        self.title = title; self.tracks = tracks; self.context = context; self.model = model
+    init(title: String, tracks: [AudioTrack], context: PlaybackContext, model: MacAppModel, searchActive: Bool = false) {
+        self.title = title
+        self.tracks = tracks
+        self.context = context
+        self.model = model
+        self.searchActive = searchActive
         _player = ObservedObject(wrappedValue: model.player)
         _playlists = ObservedObject(wrappedValue: model.playlists)
     }
 
     var body: some View {
         List(tracks) { track in
-            MacTrackRow(track: track, isPlaying: player.currentTrack?.id == track.id && player.isPlaying)
-                .contentShape(Rectangle()).onTapGesture(count: 2) { player.play(track: track, in: tracks, context: context) }
-                .contextMenu {
-                    Button("Play") { player.play(track: track, in: tracks, context: context) }
-                    Button("Add to Queue") { player.addToQueue(track) }
-                    Menu("Add to Playlist") {
-                        ForEach(playlists.playlists) { playlist in
-                            Button(playlist.title) { playlists.addTrack(track.id, to: playlist) }
-                        }
-                    }
-                    if case .playlist(let playlist) = context {
-                        Button("Remove from Playlist") { playlists.removeTrack(track.id, from: playlist) }
-                    }
-                    Divider()
-                    Button("Reveal in Finder") { model.reveal(track) }
-                    Button("Move to Trash", role: .destructive) { model.requestTrash(track) }
-                }
+            TrackRow(track: track, isCurrent: player.isCurrentTrack(track), isPlaying: player.isPlaying, layoutMode: .expanded)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) { player.play(track: track, in: tracks, context: context) }
+                .contextMenu { actions(for: track) }
         }
         .navigationTitle(title)
-        .overlay { if tracks.isEmpty { ContentUnavailableView("No Music", systemImage: "music.note", description: Text("No matching available tracks.")) } }
+        .overlay {
+            if tracks.isEmpty {
+                SemiquaverUnavailableState(
+                    title: searchActive ? "No Search Results" : "No Music",
+                    message: searchActive ? "Try a different search." : "No available tracks.",
+                    systemImage: searchActive ? "magnifyingglass" : "music.note"
+                )
+            }
+        }
+    }
+
+    @ViewBuilder private func actions(for track: AudioTrack) -> some View {
+        Button("Play", systemImage: "play.fill") { player.play(track: track, in: tracks, context: context) }
+        Button("Add to Queue", systemImage: "text.line.first.and.arrowtriangle.forward") { player.addToQueue(track) }
+        Menu("Add to Playlist") {
+            ForEach(playlists.playlists) { playlist in
+                if playlist.trackIDs.contains(track.id) {
+                    Button("Remove from \(playlist.title)") { playlists.removeTrack(track.id, from: playlist) }
+                } else {
+                    Button(playlist.title) { playlists.addTrack(track.id, to: playlist) }
+                }
+            }
+        }
+        if case .playlist(let playlist) = context {
+            Button("Remove from Playlist") { playlists.removeTrack(track.id, from: playlist) }
+        }
+        Divider()
+        Button("Reveal in Finder", systemImage: "folder") { model.reveal(track) }
+        Button("Move to Trash", systemImage: "trash", role: .destructive) { model.requestTrash(track) }
     }
 }
 
-private struct MacGroupedList: View {
+private struct MacGroupList: View {
     let title: String
     let groups: [AudioGroupSummary]
-    let tracks: [String: [AudioTrack]]
     let searchText: String
-    let model: MacAppModel
+    @ObservedObject var model: MacAppModel
+
+    private var filtered: [AudioGroupSummary] {
+        LibrarySearch.groups(groups, tracksForGroup: tracks(for:), matching: searchText)
+    }
 
     var body: some View {
-        List {
-            ForEach(groups.filter { searchText.isEmpty || $0.title.localizedCaseInsensitiveContains(searchText) || $0.subtitle.localizedCaseInsensitiveContains(searchText) }) { group in
-                DisclosureGroup {
-                    ForEach(tracks[group.id] ?? []) { track in
-                        MacTrackRow(track: track, isPlaying: model.player.currentTrack?.id == track.id && model.player.isPlaying)
-                            .onTapGesture(count: 2) { model.player.play(track: track, in: tracks[group.id] ?? [], context: .library) }
-                            .contextMenu {
-                                Button("Play") { model.player.play(track: track, in: tracks[group.id] ?? [], context: .library) }
-                                Button("Add to Queue") { model.player.addToQueue(track) }
-                                Menu("Add to Playlist") {
-                                    ForEach(model.playlists.playlists) { playlist in
-                                        Button(playlist.title) { model.playlists.addTrack(track.id, to: playlist) }
-                                    }
-                                }
-                                Divider()
-                                Button("Reveal in Finder") { model.reveal(track) }
-                                Button("Move to Trash", role: .destructive) { model.requestTrash(track) }
-                            }
-                    }
-                } label: { Label(group.title, systemImage: group.kind == .artist ? "music.mic" : "square.stack") }
+        List(filtered) { group in
+            NavigationLink {
+                let contents = tracks(for: group)
+                MacTrackList(title: group.title, tracks: contents, context: context(for: group, tracks: contents), model: model)
+            } label: { MediaGroupRow(group: group, layoutMode: .expanded) }
+        }
+        .navigationTitle(title)
+        .overlay {
+            if filtered.isEmpty {
+                SemiquaverUnavailableState(title: "No Search Results", message: "Try a different search.", systemImage: "magnifyingglass")
             }
-        }.navigationTitle(title)
+        }
+    }
+
+    private func tracks(for group: AudioGroupSummary) -> [AudioTrack] {
+        switch group.kind {
+        case .artist: model.library.tracksByArtist[group.title] ?? []
+        case .album: model.library.tracksByAlbumID[String(group.id.dropFirst("album::".count))] ?? []
+        case .genre: []
+        }
+    }
+
+    private func context(for group: AudioGroupSummary, tracks: [AudioTrack]) -> PlaybackContext {
+        group.kind == .artist ? .artist(group.title) : .album(artist: tracks.first?.artist ?? AudioMetadataFallbacks.artist, title: group.title)
     }
 }
 
-private struct MacTrackRow: View {
-    let track: AudioTrack
-    let isPlaying: Bool
-    var body: some View {
-        HStack(spacing: 12) {
-            MacArtwork(data: track.artworkData, seed: track.id, size: 42)
-            VStack(alignment: .leading) {
-                Text(track.title).lineLimit(1)
-                Text("\(track.artist) • \(track.album)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-            }
-            Spacer()
-            if isPlaying { Image(systemName: "waveform").foregroundStyle(Color.playerAccent).accessibilityLabel("Playing") }
-            Text(track.durationText).font(.caption).foregroundStyle(.secondary).monospacedDigit()
-        }.padding(.vertical, 3)
-    }
-}
-
-private struct MacArtwork: View {
-    let data: Data?; let seed: String; let size: CGFloat
-    var body: some View {
-        Group {
-            if let data, let image = NSImage(data: data) { Image(nsImage: image).resizable().scaledToFill() }
-            else { LinearGradient(colors: MediaArtworkPalette.colors(for: seed), startPoint: .topLeading, endPoint: .bottomTrailing).overlay(Image(systemName: "music.note").foregroundStyle(.white)) }
-        }.frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: size * 0.18))
-    }
-}
-
-private struct MacPlayerBar: View {
+private struct MacExpandedPlayer: View {
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlaying: Bool
     @Binding var showQueue: Bool
-    var body: some View {
-        HStack(spacing: 12) {
-            if let track = player.currentTrack {
-                Button { showNowPlaying = true } label: {
-                    HStack { MacArtwork(data: track.artworkData, seed: track.id, size: 46); VStack(alignment: .leading) { Text(track.title).lineLimit(1); Text(track.artist).font(.caption).foregroundStyle(.secondary).lineLimit(1) } }.frame(width: 240, alignment: .leading)
-                }.buttonStyle(.plain)
-            } else { Text("Nothing Playing").foregroundStyle(.secondary).frame(width: 240, alignment: .leading) }
-            Spacer()
-            Button { player.playPrevious() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous")
-            Button { player.togglePlayPause() } label: { Image(systemName: player.isPlaying ? "pause.circle.fill" : "play.circle.fill").font(.title) }.accessibilityLabel(player.isPlaying ? "Pause" : "Play")
-            Button { player.playNext() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next")
-            Slider(value: Binding(get: { player.currentTime }, set: { player.setCurrentTime($0) }), in: 0...max(player.duration, 1)).frame(maxWidth: 320)
-            Spacer()
-            Button { showQueue.toggle() } label: { Image(systemName: "list.bullet") }.accessibilityLabel("Toggle Queue").help("Queue (⌘U)")
-        }.buttonStyle(.borderless).padding(.horizontal, 16).padding(.vertical, 8).background(.bar)
-    }
-}
 
-private struct MacQueueView: View {
-    @ObservedObject var player: AudioPlayerController
     var body: some View {
-        List {
-            Section("Now Playing") { if let track = player.currentTrack { MacTrackRow(track: track, isPlaying: player.isPlaying) } else { Text("Nothing playing") } }
-            Section("Up Next") { ForEach(Array(player.playbackQueue.enumerated()), id: \.element.id) { index, track in MacTrackRow(track: track, isPlaying: false).contextMenu { Button("Remove") { player.removeFromQueue(at: index) } } } }
-        }.navigationTitle("Queue")
-    }
-}
-
-private struct MacNowPlayingView: View {
-    @ObservedObject var player: AudioPlayerController
-    @Environment(\.dismiss) private var dismiss
-    var body: some View {
-        VStack(spacing: 20) {
-            if let track = player.currentTrack {
-                MacArtwork(data: track.artworkData, seed: track.id, size: 240)
-                Text(track.title).font(.title.bold()).lineLimit(2)
-                Text(track.detailText).foregroundStyle(.secondary)
-                Slider(value: Binding(get: { player.currentTime }, set: { player.setCurrentTime($0) }), in: 0...max(player.duration, 1))
-                HStack { Button { player.playPrevious() } label: { Image(systemName: "backward.fill") }; Button { player.togglePlayPause() } label: { Image(systemName: player.isPlaying ? "pause.circle.fill" : "play.circle.fill").font(.largeTitle) }; Button { player.playNext() } label: { Image(systemName: "forward.fill") } }.buttonStyle(.borderless)
+        HStack(spacing: 18) {
+            Button { showNowPlaying = true } label: {
+                MiniPlayerContent(player: player).frame(width: 270)
             }
-        }.padding(32).frame(width: 420, height: 500).toolbar { Button("Done") { dismiss() } }
+            .buttonStyle(.plain).disabled(player.currentTrack == nil)
+            Spacer(minLength: 8)
+            PlayerControls(player: player)
+            PlaybackProgress(player: player).frame(maxWidth: 340)
+            Spacer(minLength: 8)
+            Button("Queue", systemImage: "list.bullet") { showQueue.toggle() }
+                .labelStyle(.iconOnly).help("Queue (⌘U)")
+        }
+        .padding(.horizontal, 16).frame(height: SemiquaverLayoutMode.expanded.playerHeight).background(.bar)
     }
 }
 

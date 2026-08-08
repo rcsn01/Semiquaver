@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsTabView: View {
     @ObservedObject var player: AudioPlayerController
     @AppStorage("appTheme") private var appTheme: AppTheme = .automatic
+    @AppStorage("shuffleByDefault") private var shuffleByDefault = false
     @State private var showThemePicker = false
     @State private var showFilesOpenHelp = false
 
@@ -36,7 +37,7 @@ struct SettingsTabView: View {
                         SettingsToggleRow(
                             title: "Shuffle new queues",
                             subtitle: "Automatically shuffle when starting new playback",
-                            isOn: $player.shuffleByDefault
+                            isOn: $shuffleByDefault
                         )
 
                         Divider().overlay(Color.playerDivider)
@@ -88,6 +89,8 @@ struct SettingsTabView: View {
         } message: {
             Text("Open Files and go to On My iPhone > Semiquaver > Music.")
         }
+        .onAppear { player.shuffleByDefault = shuffleByDefault }
+        .onChange(of: shuffleByDefault) { _, value in player.shuffleByDefault = value }
     }
 
     private var header: some View {
