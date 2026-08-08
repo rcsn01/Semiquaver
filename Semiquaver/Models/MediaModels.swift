@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 // MARK: - UI Models
 
@@ -95,12 +94,12 @@ struct BrowseTile: Identifiable {
 // MARK: - Audio Domain Models
 
 enum AudioMetadataFallbacks {
-    static let artist = "Unknown Artist"
-    static let album = "Unknown Album"
-    static let genre = "Unknown Genre"
+    nonisolated static let artist = "Unknown Artist"
+    nonisolated static let album = "Unknown Album"
+    nonisolated static let genre = "Unknown Genre"
 }
 
-enum AudioGroupKind: Sendable {
+enum AudioGroupKind: Hashable, Sendable {
     case artist
     case album
     case genre
