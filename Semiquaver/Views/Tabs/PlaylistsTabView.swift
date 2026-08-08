@@ -1,11 +1,15 @@
 import SwiftUI
 
 struct PlaylistsTabView: View {
-    @StateObject private var playlistStorage = PlaylistStorage()
+    @ObservedObject var playlistStorage: PlaylistStorage
+    @ObservedObject var library: AppMusicLibrary
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlayingFullScreen: Bool
     @State private var showingCreatePlaylist = false
     @State private var newPlaylistTitle = ""
+    @State private var playlistToRename: PlaylistItem?
+    @State private var playlistToDelete: PlaylistItem?
+    @State private var editedTitle = ""
 
     var body: some View {
         PlayerScaffold(
@@ -20,7 +24,8 @@ struct PlaylistsTabView: View {
                             NavigationLink {
                                 PlaylistDetailView(
                                     playlist: playlist,
-                                    allTracks: [],
+                                    allTracks: library.tracks,
+                                    playlistStorage: playlistStorage,
                                     player: player,
                                     showNowPlayingFullScreen: $showNowPlayingFullScreen
                                 )
@@ -29,6 +34,13 @@ struct PlaylistsTabView: View {
                                     .padding(.horizontal, 4)
                             }
                             .buttonStyle(PressScaleButtonStyle())
+                            .contextMenu {
+                                Button("Rename") {
+                                    editedTitle = playlist.title
+                                    playlistToRename = playlist
+                                }
+                                Button("Delete", role: .destructive) { playlistToDelete = playlist }
+                            }
 
                             if playlist.id != playlistStorage.playlists.last?.id {
                                 Divider()
@@ -46,8 +58,7 @@ struct PlaylistsTabView: View {
         .alert("New Playlist", isPresented: $showingCreatePlaylist) {
             TextField("Playlist Name", text: $newPlaylistTitle)
             Button("Create") {
-                guard !newPlaylistTitle.isEmpty else { return }
-                playlistStorage.createPlaylist(title: newPlaylistTitle)
+                guard playlistStorage.createPlaylist(title: newPlaylistTitle) else { return }
                 newPlaylistTitle = ""
             }
             Button("Cancel", role: .cancel) {
@@ -55,6 +66,27 @@ struct PlaylistsTabView: View {
             }
         } message: {
             Text("Enter a name for your new playlist.")
+        }
+        .alert("Rename Playlist", isPresented: Binding(
+            get: { playlistToRename != nil },
+            set: { if !$0 { playlistToRename = nil } }
+        )) {
+            TextField("Playlist Name", text: $editedTitle)
+            Button("Rename") {
+                if let playlistToRename { _ = playlistStorage.renamePlaylist(id: playlistToRename.id, title: editedTitle) }
+                playlistToRename = nil
+            }
+            Button("Cancel", role: .cancel) { playlistToRename = nil }
+        }
+        .confirmationDialog("Delete Playlist?", isPresented: Binding(
+            get: { playlistToDelete != nil },
+            set: { if !$0 { playlistToDelete = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete Playlist", role: .destructive) {
+                if let playlistToDelete { playlistStorage.deletePlaylist(playlistToDelete) }
+                playlistToDelete = nil
+            }
+            Button("Cancel", role: .cancel) { playlistToDelete = nil }
         }
     }
 }

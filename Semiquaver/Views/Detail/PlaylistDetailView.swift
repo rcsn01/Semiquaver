@@ -3,12 +3,17 @@ import SwiftUI
 struct PlaylistDetailView: View {
     let playlist: PlaylistItem
     let allTracks: [AudioTrack]
+    @ObservedObject var playlistStorage: PlaylistStorage
     @ObservedObject var player: AudioPlayerController
     @Binding var showNowPlayingFullScreen: Bool
 
+    private var currentPlaylist: PlaylistItem {
+        playlistStorage.playlists.first(where: { $0.id == playlist.id }) ?? playlist
+    }
+
     var tracks: [AudioTrack] {
         let trackMap = Dictionary(uniqueKeysWithValues: allTracks.map { ($0.id, $0) })
-        return playlist.trackIDs.compactMap { trackMap[$0] }
+        return currentPlaylist.trackIDs.compactMap { trackMap[$0] }
     }
 
     var body: some View {
@@ -55,11 +60,11 @@ struct PlaylistDetailView: View {
             }
 
             VStack(spacing: 6) {
-                Text(playlist.title)
+                Text(currentPlaylist.title)
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.playerTextPrimary)
 
-                Text(playlist.detail)
+                Text(currentPlaylist.detail)
                     .font(.bodyMedium())
                     .foregroundStyle(Color.playerTextSecondary)
 
@@ -77,7 +82,7 @@ struct PlaylistDetailView: View {
         ForEach(tracks) { track in
             VStack(spacing: 0) {
                 Button {
-                    if player.play(track: track, in: tracks, context: .playlist(playlist)) {
+                    if player.play(track: track, in: tracks, context: .playlist(currentPlaylist)) {
                         showNowPlayingFullScreen = true
                     }
                 } label: {
@@ -109,6 +114,16 @@ struct PlaylistDetailView: View {
                     Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
                 }
                 .tint(Color.playerAccent)
+            }
+            .swipeActions(edge: .trailing) {
+                Button("Remove", role: .destructive) {
+                    playlistStorage.removeTrack(track.id, from: currentPlaylist)
+                }
+            }
+            .contextMenu {
+                Button("Play") { player.play(track: track, in: tracks, context: .playlist(currentPlaylist)) }
+                Button("Add to Queue") { player.addToQueue(track) }
+                Button("Remove from Playlist", role: .destructive) { playlistStorage.removeTrack(track.id, from: currentPlaylist) }
             }
         }
     }

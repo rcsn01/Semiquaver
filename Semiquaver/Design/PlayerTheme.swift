@@ -1,5 +1,28 @@
 import SwiftUI
 
+enum SemiquaverLayoutMode: Sendable {
+    case compact
+    case expanded
+
+    var artworkSize: CGFloat { self == .compact ? 52 : 44 }
+    var rowHeight: CGFloat { self == .compact ? 68 : 54 }
+    var contentPadding: CGFloat { self == .compact ? 16 : 20 }
+    var playerHeight: CGFloat { self == .compact ? 68 : 72 }
+}
+
+enum SemiquaverMetrics {
+    static let spacingXS: CGFloat = 4
+    static let spacingS: CGFloat = 8
+    static let spacingM: CGFloat = 12
+    static let spacingL: CGFloat = 16
+    static let spacingXL: CGFloat = 24
+    static let rowCornerRadius: CGFloat = 12
+    static let artworkCornerRadius: CGFloat = 10
+    static let cardCornerRadius: CGFloat = 20
+    static let quickAnimation = 0.18
+    static let standardAnimation = 0.28
+}
+
 // Platform-neutral design tokens shared by the iOS and macOS targets.
 extension Color {
     static let playerBackground = Color.primary.opacity(0.035)
@@ -43,11 +66,12 @@ struct GlassCardModifier: ViewModifier {
 }
 
 struct PressScaleButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
             .opacity(configuration.isPressed ? 0.8 : 1)
-            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+            .animation(reduceMotion ? nil : .easeOut(duration: SemiquaverMetrics.quickAnimation), value: configuration.isPressed)
     }
 }
 

@@ -1,5 +1,117 @@
 import SwiftUI
 
+enum LibraryDestination: Hashable, Identifiable {
+    case songs
+    case artists
+    case albums
+    case playlist(UUID)
+    case settings
+
+    var id: String {
+        switch self {
+        case .songs: "songs"
+        case .artists: "artists"
+        case .albums: "albums"
+        case .playlist(let id): "playlist::\(id.uuidString)"
+        case .settings: "settings"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .songs: "Songs"
+        case .artists: "Artists"
+        case .albums: "Albums"
+        case .playlist: "Playlist"
+        case .settings: "Settings"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .songs: "music.note"
+        case .artists: "music.mic"
+        case .albums: "square.stack"
+        case .playlist: "music.note.list"
+        case .settings: "gearshape"
+        }
+    }
+}
+
+enum TrackActionDescriptor: String, CaseIterable, Identifiable, Sendable {
+    case play
+    case addToQueue
+    case addToPlaylist
+    case removeFromPlaylist
+    case revealInFinder
+    case removeFile
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .play: "Play"
+        case .addToQueue: "Add to Queue"
+        case .addToPlaylist: "Add to Playlist"
+        case .removeFromPlaylist: "Remove from Playlist"
+        case .revealInFinder: "Reveal in Finder"
+        case .removeFile: "Remove File"
+        }
+    }
+    var systemImage: String {
+        switch self {
+        case .play: "play.fill"
+        case .addToQueue: "text.line.first.and.arrowtriangle.forward"
+        case .addToPlaylist: "text.badge.plus"
+        case .removeFromPlaylist: "text.badge.minus"
+        case .revealInFinder: "folder"
+        case .removeFile: "trash"
+        }
+    }
+    var isDestructive: Bool { self == .removeFile }
+}
+
+enum LibrarySearch {
+    static func normalized(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+    }
+
+    static func tracks(_ tracks: [AudioTrack], matching query: String) -> [AudioTrack] {
+        let query = normalized(query)
+        guard !query.isEmpty else { return tracks }
+        return tracks.filter { track in
+            [track.title, track.artist, track.album, track.genre]
+                .contains { normalized($0).contains(query) }
+        }
+    }
+
+    static func groups(
+        _ groups: [AudioGroupSummary],
+        tracksForGroup: (AudioGroupSummary) -> [AudioTrack],
+        matching query: String
+    ) -> [AudioGroupSummary] {
+        let query = normalized(query)
+        guard !query.isEmpty else { return groups }
+        return groups.filter { group in
+            normalized(group.title).contains(query)
+                || normalized(group.subtitle).contains(query)
+                || !tracks(tracksForGroup(group), matching: query).isEmpty
+        }
+    }
+
+    static func playlistTracks(
+        _ playlist: PlaylistItem,
+        allTracks: [AudioTrack],
+        matching query: String
+    ) -> [AudioTrack] {
+        let trackMap = Dictionary(uniqueKeysWithValues: allTracks.map { ($0.id, $0) })
+        let contents = playlist.trackIDs.compactMap { trackMap[$0] }
+        let query = normalized(query)
+        guard !query.isEmpty else { return contents }
+        return normalized(playlist.title).contains(query) ? contents : tracks(contents, matching: query)
+    }
+}
+
 // MARK: - UI Models
 
 struct MediaItem: Identifiable {

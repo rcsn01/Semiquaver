@@ -8,7 +8,12 @@ struct MediaRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            artworkView
+            ArtworkView(
+                data: item.artworkData,
+                seed: item.id,
+                systemImage: item.icon,
+                size: 52
+            )
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
@@ -41,34 +46,4 @@ struct MediaRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    @ViewBuilder
-    private var artworkView: some View {
-        if let artworkData = item.artworkData,
-           let artwork = UIImage(data: artworkData) {
-            Image(uiImage: artwork)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 52, height: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .modifier(GlowModifier(color: Color.clear, radius: 0))
-        } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: item.colors,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 52, height: 52)
-                    .modifier(GlowModifier(color: item.colors.first ?? .clear, radius: 12))
-
-                Image(systemName: item.icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.playerArtworkIcon)
-                    .shadow(color: Color.playerArtworkShadow, radius: 2, x: 0, y: 1)
-            }
-        }
-    }
 }
