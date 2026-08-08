@@ -6,9 +6,26 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B00000000000000000000001 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000001 /* MediaModels.swift */; };
+		B00000000000000000000002 /* AudioPlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000002 /* AudioPlayerController.swift */; };
+		B00000000000000000000003 /* PlaylistStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000003 /* PlaylistStorage.swift */; };
+		B00000000000000000000004 /* PlayerTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000004 /* PlayerTheme.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		0427FC1A2F9A67D800A20AD9 /* Semiquaver.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Semiquaver.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		M00000000000000000000001 /* Semiquaver-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Semiquaver-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		T00000000000000000000001 /* Semiquaver-macOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Semiquaver-macOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		S00000000000000000000001 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Semiquaver/Models/MediaModels.swift; sourceTree = SOURCE_ROOT; };
+		S00000000000000000000002 /* AudioPlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Semiquaver/Storage/AudioPlayerController.swift; sourceTree = SOURCE_ROOT; };
+		S00000000000000000000003 /* PlaylistStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Semiquaver/Storage/PlaylistStorage.swift; sourceTree = SOURCE_ROOT; };
+		S00000000000000000000004 /* PlayerTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Semiquaver/Design/PlayerTheme.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		T00000000000000000000009 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = 0427FC122F9A67D800A20AD9 /* Project object */; proxyType = 1; remoteGlobalIDString = M00000000000000000000010; remoteInfo = "Semiquaver-macOS"; };
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		0427FCCB2F9B0DF700A20AD9 /* Exceptions for "Semiquaver" folder in "Semiquaver" target */ = {
@@ -17,6 +34,13 @@
 				Info.plist,
 			);
 			target = 0427FC192F9A67D800A20AD9 /* Semiquaver */;
+		};
+		M00000000000000000000003 /* Exceptions for Semiquaver-macOS */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Semiquaver-macOS.entitlements",
+			);
+			target = M00000000000000000000010 /* Semiquaver-macOS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -29,6 +53,19 @@
 			path = Semiquaver;
 			sourceTree = "<group>";
 		};
+		M00000000000000000000002 /* Semiquaver-macOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				M00000000000000000000003 /* Exceptions for Semiquaver-macOS */,
+			);
+			path = "Semiquaver-macOS";
+			sourceTree = "<group>";
+		};
+		T00000000000000000000002 /* Semiquaver-macOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Semiquaver-macOSTests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +76,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		M00000000000000000000011 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T00000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,14 +90,30 @@
 			isa = PBXGroup;
 			children = (
 				0427FC1C2F9A67D800A20AD9 /* Semiquaver */,
+				M00000000000000000000002 /* Semiquaver-macOS */,
+				T00000000000000000000002 /* Semiquaver-macOSTests */,
+				S00000000000000000000010 /* Shared Sources */,
 				0427FC1B2F9A67D800A20AD9 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		S00000000000000000000010 /* Shared Sources */ = {
+			isa = PBXGroup;
+			children = (
+				S00000000000000000000001 /* MediaModels.swift */,
+				S00000000000000000000002 /* AudioPlayerController.swift */,
+				S00000000000000000000003 /* PlaylistStorage.swift */,
+				S00000000000000000000004 /* PlayerTheme.swift */,
+			);
+			name = "Shared Sources";
 			sourceTree = "<group>";
 		};
 		0427FC1B2F9A67D800A20AD9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				0427FC1A2F9A67D800A20AD9 /* Semiquaver.app */,
+				M00000000000000000000001 /* Semiquaver-macOS.app */,
+				T00000000000000000000001 /* Semiquaver-macOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +143,38 @@
 			productReference = 0427FC1A2F9A67D800A20AD9 /* Semiquaver.app */;
 			productType = "com.apple.product-type.application";
 		};
+		M00000000000000000000010 /* Semiquaver-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = M00000000000000000000020 /* Build configuration list for PBXNativeTarget Semiquaver-macOS */;
+			buildPhases = (
+				M00000000000000000000012 /* Sources */,
+				M00000000000000000000011 /* Frameworks */,
+				M00000000000000000000013 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (
+				M00000000000000000000002 /* Semiquaver-macOS */,
+			);
+			name = "Semiquaver-macOS";
+			packageProductDependencies = ();
+			productName = "Semiquaver-macOS";
+			productReference = M00000000000000000000001 /* Semiquaver-macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		T00000000000000000000010 /* Semiquaver-macOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = T00000000000000000000020 /* Build configuration list for Semiquaver-macOSTests */;
+			buildPhases = (T00000000000000000000004 /* Sources */, T00000000000000000000003 /* Frameworks */, T00000000000000000000005 /* Resources */);
+			buildRules = ();
+			dependencies = (T00000000000000000000008 /* PBXTargetDependency */);
+			fileSystemSynchronizedGroups = (T00000000000000000000002 /* Semiquaver-macOSTests */);
+			name = "Semiquaver-macOSTests";
+			packageProductDependencies = ();
+			productName = "Semiquaver-macOSTests";
+			productReference = T00000000000000000000001 /* Semiquaver-macOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -96,6 +188,10 @@
 					0427FC192F9A67D800A20AD9 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
+					M00000000000000000000010 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					T00000000000000000000010 = { CreatedOnToolsVersion = 26.4.1; TestTargetID = M00000000000000000000010; };
 				};
 			};
 			buildConfigurationList = 0427FC152F9A67D800A20AD9 /* Build configuration list for PBXProject "Semiquaver" */;
@@ -113,6 +209,8 @@
 			projectRoot = "";
 			targets = (
 				0427FC192F9A67D800A20AD9 /* Semiquaver */,
+				M00000000000000000000010 /* Semiquaver-macOS */,
+				T00000000000000000000010 /* Semiquaver-macOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -125,6 +223,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		M00000000000000000000013 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T00000000000000000000005 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -135,6 +240,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		M00000000000000000000012 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000001 /* MediaModels.swift in Sources */,
+				B00000000000000000000002 /* AudioPlayerController.swift in Sources */,
+				B00000000000000000000003 /* PlaylistStorage.swift in Sources */,
+				B00000000000000000000004 /* PlayerTheme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T00000000000000000000004 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -327,6 +444,67 @@
 			};
 			name = Release;
 		};
+		M00000000000000000000021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = MacAppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Semiquaver-macOS/Semiquaver-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 3SK9Z5ZUNR;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks");
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.opense.Semiquaver.mac;
+				PRODUCT_NAME = Semiquaver;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		M00000000000000000000022 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = MacAppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Semiquaver-macOS/Semiquaver-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 3SK9Z5ZUNR;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks");
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.opense.Semiquaver.mac;
+				PRODUCT_NAME = Semiquaver;
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		T00000000000000000000021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = { BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = 3SK9Z5ZUNR; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 15.0; PRODUCT_BUNDLE_IDENTIFIER = com.opense.Semiquaver.macTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = macosx; SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; SWIFT_VERSION = 5.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Semiquaver.app/Contents/MacOS/Semiquaver"; };
+			name = Debug;
+		};
+		T00000000000000000000022 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = { BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = 3SK9Z5ZUNR; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 15.0; PRODUCT_BUNDLE_IDENTIFIER = com.opense.Semiquaver.macTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = macosx; SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; SWIFT_VERSION = 5.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Semiquaver.app/Contents/MacOS/Semiquaver"; };
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -348,7 +526,21 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		M00000000000000000000020 /* Build configuration list for PBXNativeTarget Semiquaver-macOS */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				M00000000000000000000021 /* Debug */,
+				M00000000000000000000022 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		T00000000000000000000020 /* Build configuration list for Semiquaver-macOSTests */ = {isa = XCConfigurationList; buildConfigurations = (T00000000000000000000021 /* Debug */, T00000000000000000000022 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
+
+/* Begin PBXTargetDependency section */
+		T00000000000000000000008 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = M00000000000000000000010 /* Semiquaver-macOS */; targetProxy = T00000000000000000000009 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
 	};
 	rootObject = 0427FC122F9A67D800A20AD9 /* Project object */;
 }

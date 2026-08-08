@@ -5,8 +5,10 @@ final class PlaylistStorage: ObservableObject, @unchecked Sendable {
     @Published var playlists: [PlaylistItem] = []
 
     private static let fileName = "playlists.json"
+    private let overriddenFileURL: URL?
 
-    init() {
+    init(fileURL: URL? = nil) {
+        self.overriddenFileURL = fileURL
         load()
     }
 
@@ -61,10 +63,14 @@ final class PlaylistStorage: ObservableObject, @unchecked Sendable {
 
     private func load() {
         guard let url = fileURL, FileManager.default.fileExists(atPath: url.path) else {
-            // Seed with mock data on first launch
+            #if os(macOS)
+            playlists = []
+            #else
+            // Keep the existing iOS first-launch experience unchanged.
             playlists = MockLibrary.playlists.map {
                 PlaylistItem(title: $0.title, detail: $0.detail, trackIDs: [])
             }
+            #endif
             save()
             return
         }
@@ -78,8 +84,25 @@ final class PlaylistStorage: ObservableObject, @unchecked Sendable {
     }
 
     private var fileURL: URL? {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+        if let overriddenFileURL { return overriddenFileURL }
+        return FileManager.default.urls(for: Self.storageDirectory, in: .userDomainMask).first?
             .appendingPathComponent(Self.fileName)
+    }
+
+    private static var storageDirectory: FileManager.SearchPathDirectory {
+        #if os(macOS)
+        .applicationSupportDirectory
+        #else
+        .documentDirectory
+        #endif
+    }
+
+    func removeTrackFromAllPlaylists(_ trackID: String) {
+        for index in playlists.indices {
+            playlists[index].trackIDs.removeAll { $0 == trackID }
+            updateDetail(for: index)
+        }
+        save()
     }
 
     private func updateDetail(for index: Int) {

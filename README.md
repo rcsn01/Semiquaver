@@ -1,6 +1,32 @@
 # Semiquaver
 
-Semiquaver is an iOS app project built with Xcode.
+Semiquaver is a native SwiftUI music player for iOS and macOS. The Mac app indexes user-selected folders in place using sandbox-compatible security-scoped bookmarks; Mac playlists and settings stay local and never synchronize with iOS.
+
+## Build the macOS App
+
+The `Semiquaver-macOS` shared scheme targets macOS 15 or newer. From the project root:
+
+```sh
+xcodebuild -project Semiquaver.xcodeproj \
+  -scheme Semiquaver-macOS \
+  -configuration Debug \
+  -destination 'platform=macOS' \
+  -derivedDataPath DerivedData-macOS \
+  build
+```
+
+To create a Release archive suitable for signing/distribution:
+
+```sh
+xcodebuild -project Semiquaver.xcodeproj \
+  -scheme Semiquaver-macOS \
+  -configuration Release \
+  -destination 'generic/platform=macOS' \
+  -archivePath build/Semiquaver-macOS.xcarchive \
+  archive
+```
+
+The Mac target uses App Sandbox, app-scoped bookmarks, user-selected read/write access, and hardened runtime. It has bundle identifier `com.opense.Semiquaver.mac` and Music application-category metadata.
 
 ## Building an IPA for SideStore
 

@@ -3,6 +3,11 @@ import Combine
 import Foundation
 import MediaPlayer
 import SwiftUI
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 enum RepeatMode: String, CaseIterable {
     case off = "off"
@@ -121,6 +126,14 @@ final class AudioPlayerController: NSObject, ObservableObject {
         playbackHistory = []
         stopProgressTimer()
         updateNowPlayingInfo()
+        updateRemoteCommandAvailability()
+    }
+
+    func removeTracks(withIDs ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        if let currentTrack, ids.contains(currentTrack.id) { stop() }
+        playbackQueue.removeAll { ids.contains($0.id) }
+        playbackHistory.removeAll { ids.contains($0.id) }
         updateRemoteCommandAvailability()
     }
 
@@ -259,14 +272,17 @@ final class AudioPlayerController: NSObject, ObservableObject {
             print("Playback failed for \(track.fileURL.lastPathComponent) [\(fileExtension)] reachable=\(isReachable) path=\(track.fileURL.path) error=\(error.localizedDescription)")
             errorMessage = error.localizedDescription
             isPlaying = false
+            updateNowPlayingInfo()
             return false
         }
     }
 
     private func configureAudioSession() throws {
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playback, mode: .default, options: [])
         try session.setActive(true)
+        #endif
     }
 
     private func deduplicatedTracks(from tracks: [AudioTrack]) -> [AudioTrack] {
@@ -299,6 +315,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
     // MARK: - Audio Interruptions
 
     private func observeAudioInterruptions() {
+        #if os(iOS)
         interruptionObserver = NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification,
             object: nil,
@@ -308,9 +325,11 @@ final class AudioPlayerController: NSObject, ObservableObject {
                 self?.handleInterruption(notification)
             }
         }
+        #endif
     }
 
     private func handleInterruption(_ notification: Notification) {
+        #if os(iOS)
         guard let userInfo = notification.userInfo,
               let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
@@ -337,6 +356,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
         @unknown default:
             break
         }
+        #endif
     }
 
     // MARK: - Remote Commands
@@ -403,6 +423,9 @@ final class AudioPlayerController: NSObject, ObservableObject {
     private func updateNowPlayingInfo() {
         guard let track = currentTrack else {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            #if os(macOS)
+            MPNowPlayingInfoCenter.default().playbackState = .stopped
+            #endif
             return
         }
 
@@ -417,14 +440,23 @@ final class AudioPlayerController: NSObject, ObservableObject {
         ]
 
         if let artworkData = track.artworkData,
-           let image = UIImage(data: artworkData) {
+           let image = PlatformImage(data: artworkData) {
             let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
             nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        #if os(macOS)
+        MPNowPlayingInfoCenter.default().playbackState = isPlaying ? .playing : .paused
+        #endif
     }
 }
+
+#if os(iOS)
+private typealias PlatformImage = UIImage
+#elseif os(macOS)
+private typealias PlatformImage = NSImage
+#endif
 
 // MARK: - AVAudioPlayerDelegate
 
@@ -448,6 +480,7 @@ extension AudioPlayerController: AVAudioPlayerDelegate {
             self.isPlaying = false
             self.stopProgressTimer()
             self.errorMessage = error?.localizedDescription ?? "Semiquaver couldn't decode that audio file."
+            self.updateNowPlayingInfo()
         }
     }
 }
