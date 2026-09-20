@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 #if os(iOS)
 import UIKit
 #elseif os(macOS)
@@ -24,14 +25,12 @@ struct ArtworkView: View {
                 .overlay {
                     Image(systemName: systemImage)
                         .font(.system(size: size * 0.34, weight: .semibold))
-                        .foregroundStyle(Color.playerArtworkIcon)
-                        .shadow(color: Color.playerArtworkShadow, radius: 2, y: 1)
+                        .foregroundStyle(Color.white.opacity(0.9))
                 }
             }
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: max(6, size * 0.19), style: .continuous))
-        .shadow(color: Color.playerShadow.opacity(0.55), radius: size * 0.12, y: size * 0.06)
         .accessibilityHidden(true)
     }
 
@@ -54,24 +53,24 @@ struct TrackRow: View {
     var layoutMode: SemiquaverLayoutMode = .compact
 
     var body: some View {
-        HStack(spacing: SemiquaverMetrics.spacingM) {
+        HStack(spacing: MoiraSpace.x3) {
             ArtworkView(data: track.artworkData, seed: track.id, size: layoutMode.artworkSize)
-            VStack(alignment: .leading, spacing: SemiquaverMetrics.spacingXS) {
-                Text(track.title).font(.bodyMedium()).lineLimit(1)
-                Text(track.detailText).font(.caption()).foregroundStyle(.secondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: MoiraSpace.x1) {
+                Text(track.title).font(MoiraType.body(weight: .semibold)).lineLimit(1)
+                Text(track.detailText).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
             }
-            Spacer(minLength: SemiquaverMetrics.spacingS)
+            Spacer(minLength: MoiraSpace.x2)
             if isCurrent {
                 Image(systemName: isPlaying ? "waveform" : "pause.fill")
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textPrimary)
                     .accessibilityLabel(isPlaying ? "Playing" : "Paused")
             }
-            Text(track.durationText).font(.caption()).foregroundStyle(.secondary).monospacedDigit()
+            Text(track.durationText).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).monospacedDigit()
         }
         .frame(minHeight: layoutMode.rowHeight)
-        .padding(.horizontal, SemiquaverMetrics.spacingS)
-        .background(isCurrent ? Color.playerAccent.opacity(0.08) : .clear)
-        .clipShape(RoundedRectangle(cornerRadius: SemiquaverMetrics.rowCornerRadius, style: .continuous))
+        .padding(.horizontal, MoiraSpace.x2)
+        .background(isCurrent ? MoiraColor.controlSelected : .clear)
+        .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.card, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(track.title), \(track.artist), \(track.album), \(track.durationText)")
     }
@@ -82,16 +81,16 @@ struct MediaGroupRow: View {
     var layoutMode: SemiquaverLayoutMode = .compact
 
     var body: some View {
-        HStack(spacing: SemiquaverMetrics.spacingM) {
+        HStack(spacing: MoiraSpace.x3) {
             ArtworkView(
                 data: group.artworkData,
                 seed: group.id,
                 systemImage: group.kind == .artist ? "music.mic" : "square.stack",
                 size: layoutMode.artworkSize
             )
-            VStack(alignment: .leading, spacing: SemiquaverMetrics.spacingXS) {
-                Text(group.title).font(.bodyMedium()).lineLimit(1)
-                Text(group.subtitle).font(.caption()).foregroundStyle(.secondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: MoiraSpace.x1) {
+                Text(group.title).font(MoiraType.body(weight: .semibold)).lineLimit(1)
+                Text(group.subtitle).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
@@ -112,11 +111,11 @@ struct CollectionHeader: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: SemiquaverMetrics.spacingXL) { artwork; labels }
-            VStack(spacing: SemiquaverMetrics.spacingL) { artwork; labels }
+            HStack(spacing: MoiraSpace.x6) { artwork; labels }
+            VStack(spacing: MoiraSpace.x4) { artwork; labels }
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(SemiquaverMetrics.spacingXL)
+        .padding(MoiraSpace.x6)
     }
 
     private var artwork: some View {
@@ -124,7 +123,7 @@ struct CollectionHeader: View {
     }
 
     private var labels: some View {
-        VStack(alignment: layoutMode == .compact ? .center : .leading, spacing: SemiquaverMetrics.spacingS) {
+        VStack(alignment: layoutMode == .compact ? .center : .leading, spacing: MoiraSpace.x2) {
             Text(title).font(.title.bold()).multilineTextAlignment(layoutMode == .compact ? .center : .leading)
             if let subtitle { Text(subtitle).font(.body).foregroundStyle(.secondary) }
         }
@@ -135,12 +134,12 @@ struct MiniPlayerContent: View {
     @ObservedObject var player: AudioPlayerController
 
     var body: some View {
-        HStack(spacing: SemiquaverMetrics.spacingM) {
+        HStack(spacing: MoiraSpace.x3) {
             if let track = player.currentTrack {
                 ArtworkView(data: track.artworkData, seed: track.id, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(track.title).font(.bodyMedium()).lineLimit(1)
-                    Text(track.artist).font(.caption()).foregroundStyle(.secondary).lineLimit(1)
+                    Text(track.title).font(MoiraType.body(weight: .semibold)).lineLimit(1)
+                    Text(track.artist).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
                 }
             } else {
                 Image(systemName: "music.note").foregroundStyle(.secondary)
@@ -162,7 +161,7 @@ struct PlaybackProgress: View {
     @ObservedObject var player: AudioPlayerController
 
     var body: some View {
-        VStack(spacing: SemiquaverMetrics.spacingXS) {
+        VStack(spacing: MoiraSpace.x1) {
             Slider(
                 value: Binding(
                     get: { player.currentTime },
@@ -172,12 +171,11 @@ struct PlaybackProgress: View {
             ) { editing in
                 editing ? player.beginSliderInteraction() : player.endSliderInteraction(at: player.currentTime)
             }
-            .tint(.playerAccent)
             .disabled(player.currentTrack == nil)
             HStack {
                 Text(Self.time(player.currentTime)); Spacer(); Text(Self.time(player.duration))
             }
-            .font(.captionSmall()).foregroundStyle(.secondary).monospacedDigit()
+            .font(MoiraType.caption(weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Playback position \(Self.time(player.currentTime)) of \(Self.time(player.duration))")
@@ -202,7 +200,7 @@ struct PlayerControls: View {
             Button { player.togglePlayPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(prominent ? .system(size: 62) : .title)
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textPrimary)
             }
             .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
             .disabled(player.currentTrack == nil)
@@ -210,7 +208,7 @@ struct PlayerControls: View {
                 .accessibilityLabel("Next")
             Button { player.repeatMode = nextRepeatMode } label: {
                 Image(systemName: player.repeatMode == .one ? "repeat.1" : "repeat")
-                    .foregroundStyle(player.repeatMode == .off ? Color.secondary : Color.playerAccent)
+                    .foregroundStyle(player.repeatMode == .off ? MoiraColor.textMuted : MoiraColor.textPrimary)
             }
             .accessibilityLabel("Repeat \(player.repeatMode.rawValue)")
         }
@@ -230,13 +228,13 @@ struct NowPlayingContent: View {
     var showQueue: () -> Void
 
     var body: some View {
-        VStack(spacing: SemiquaverMetrics.spacingXL) {
+        VStack(spacing: MoiraSpace.x6) {
             if let track = player.currentTrack {
                 ArtworkView(data: track.artworkData, seed: track.id, size: layoutMode == .compact ? 280 : 240)
-                VStack(spacing: SemiquaverMetrics.spacingS) {
+                VStack(spacing: MoiraSpace.x2) {
                     Text(track.title).font(.title.bold()).lineLimit(2).multilineTextAlignment(.center)
                     Text(track.detailText).foregroundStyle(.secondary).lineLimit(1)
-                    Text(player.playbackContext.shortName).font(.caption()).foregroundStyle(.tertiary)
+                    Text(player.playbackContext.shortName).font(MoiraType.small(weight: .medium)).foregroundStyle(.tertiary)
                 }
                 PlaybackProgress(player: player)
                 PlayerControls(player: player, prominent: true)
@@ -262,7 +260,7 @@ struct NowPlayingContent: View {
                 )
             }
         }
-        .padding(SemiquaverMetrics.spacingXL)
+        .padding(MoiraSpace.x6)
         .frame(maxWidth: 520)
     }
 }
@@ -314,8 +312,8 @@ struct SemiquaverUnavailableState: View {
 
 struct SemiquaverLoadingState: View {
     var body: some View {
-        VStack(spacing: SemiquaverMetrics.spacingL) {
-            ProgressView().tint(.playerAccent)
+        VStack(spacing: MoiraSpace.x4) {
+            ProgressView()
             Text("Scanning Library…").foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

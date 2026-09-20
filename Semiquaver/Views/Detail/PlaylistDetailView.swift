@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct PlaylistDetailView: View {
     let playlist: PlaylistItem
@@ -18,7 +19,7 @@ struct PlaylistDetailView: View {
 
     var body: some View {
         ZStack {
-            PlayerBackground()
+            MoiraColor.canvas.ignoresSafeArea()
 
             List {
                 Section {
@@ -43,7 +44,7 @@ struct PlaylistDetailView: View {
     private var playlistHeader: some View {
         VStack(spacing: 20) {
             ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: playlist.colors,
@@ -52,25 +53,24 @@ struct PlaylistDetailView: View {
                         )
                     )
                     .frame(width: 200, height: 200)
-                    .modifier(GlowModifier(color: playlist.colors.first ?? .clear, radius: 16))
 
                 Image(systemName: "music.note")
                     .font(.system(size: 72, weight: .light))
-                    .foregroundStyle(Color.playerArtworkIcon)
+                    .foregroundStyle(Color.white.opacity(0.9))
             }
 
             VStack(spacing: 6) {
                 Text(currentPlaylist.title)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.title())
+                    .foregroundStyle(MoiraColor.textPrimary)
 
                 Text(currentPlaylist.detail)
-                    .font(.bodyMedium())
-                    .foregroundStyle(Color.playerTextSecondary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.textMuted)
 
                 Text("\(tracks.count) songs")
-                    .font(.caption())
-                    .foregroundStyle(Color.playerTextTertiary)
+                    .font(MoiraType.small(weight: .medium))
+                    .foregroundStyle(MoiraColor.textSubtle)
             }
             .padding(.horizontal, 28)
         }
@@ -100,7 +100,7 @@ struct PlaylistDetailView: View {
 
                 if track.id != tracks.last?.id {
                     Divider()
-                        .overlay(Color.playerDivider)
+                        .overlay(MoiraColor.border)
                         .padding(.leading, 76)
                 }
             }
@@ -113,7 +113,6 @@ struct PlaylistDetailView: View {
                 } label: {
                     Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
                 }
-                .tint(Color.playerAccent)
             }
             .swipeActions(edge: .trailing) {
                 Button("Remove", role: .destructive) {

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import MoirasiaUI
 
 struct MacContentView: View {
     @ObservedObject var model: MacAppModel
@@ -34,7 +35,7 @@ struct MacContentView: View {
             Divider()
             MacExpandedPlayer(player: player, showNowPlaying: $showNowPlaying, showQueue: $model.isQueueVisible)
         }
-        .tint(.playerAccent)
+        .tint(MoiraColor.textPrimary)
         .frame(minWidth: 760, minHeight: 520)
         .task { await model.start() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in

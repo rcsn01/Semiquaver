@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct ArtistDetailView: View {
     let tracks: [AudioTrack]
@@ -23,7 +24,7 @@ struct ArtistDetailView: View {
 
     var body: some View {
         ZStack {
-            PlayerBackground()
+            MoiraColor.canvas.ignoresSafeArea()
 
             List {
                 Section {
@@ -48,7 +49,7 @@ struct ArtistDetailView: View {
     private var artistHeader: some View {
         VStack(spacing: 16) {
             ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: MediaArtworkPalette.colors(for: artistName),
@@ -57,30 +58,29 @@ struct ArtistDetailView: View {
                         )
                     )
                     .frame(width: 160, height: 160)
-                    .modifier(GlowModifier(color: MediaArtworkPalette.colors(for: artistName).first ?? .clear, radius: 16))
 
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 56, weight: .light))
-                    .foregroundStyle(Color.playerArtworkIcon)
+                    .foregroundStyle(Color.white.opacity(0.9))
             }
 
             VStack(spacing: 4) {
                 Text(artistName)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.title())
+                    .foregroundStyle(MoiraColor.textPrimary)
 
                 if !albums.isEmpty {
                     Text(albums.joined(separator: ", "))
-                        .font(.bodyRegular())
-                        .foregroundStyle(Color.playerTextSecondary)
+                        .font(MoiraType.body())
+                        .foregroundStyle(MoiraColor.textMuted)
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .padding(.horizontal, 32)
                 }
 
                 Text("\(tracks.count) songs")
-                    .font(.caption())
-                    .foregroundStyle(Color.playerTextTertiary)
+                    .font(MoiraType.small(weight: .medium))
+                    .foregroundStyle(MoiraColor.textSubtle)
             }
         }
         .padding(.vertical, 24)
@@ -109,7 +109,7 @@ struct ArtistDetailView: View {
 
                 if track.id != tracks.last?.id {
                     Divider()
-                        .overlay(Color.playerDivider)
+                        .overlay(MoiraColor.border)
                         .padding(.leading, 76)
                 }
             }
@@ -122,7 +122,6 @@ struct ArtistDetailView: View {
                 } label: {
                     Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
                 }
-                .tint(Color.playerAccent)
             }
         }
     }

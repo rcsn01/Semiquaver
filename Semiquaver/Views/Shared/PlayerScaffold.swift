@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct PlayerScaffold<Content: View>: View {
     let title: String
@@ -8,55 +9,55 @@ struct PlayerScaffold<Content: View>: View {
 
     var body: some View {
         ZStack {
-            PlayerBackground()
+            MoiraColor.canvas.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
-                
+
                 content()
             }
         }
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: MoiraSpace.x3) {
             Text(title)
-                .font(.display())
-                .foregroundStyle(Color.playerTextPrimary)
-            
+                .font(Font.system(.largeTitle, design: .default).weight(.bold))
+                .foregroundStyle(MoiraColor.textPrimary)
+
             Spacer()
-            
+
             if let trailingSystemImage {
                 if let trailingAction {
                     Button(action: trailingAction) {
                         Image(systemName: trailingSystemImage)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.playerAccent)
+                            .foregroundStyle(MoiraColor.textPrimary)
                             .frame(width: 40, height: 40)
-                            .background(Color.playerGlass)
+                            .background(MoiraColor.control)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                                RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous)
+                                    .stroke(MoiraColor.border, lineWidth: 0.5)
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous))
                     }
                     .buttonStyle(PressScaleButtonStyle())
                 } else {
                     Image(systemName: trailingSystemImage)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.playerAccent)
+                        .foregroundStyle(MoiraColor.textPrimary)
                         .frame(width: 40, height: 40)
-                        .background(Color.playerGlass)
+                        .background(MoiraColor.control)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                            RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous)
+                                .stroke(MoiraColor.border, lineWidth: 0.5)
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous))
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 16)
+        .padding(.horizontal, MoiraSpace.x5)
+        .padding(.top, MoiraSpace.x3)
+        .padding(.bottom, MoiraSpace.x4)
     }
 }

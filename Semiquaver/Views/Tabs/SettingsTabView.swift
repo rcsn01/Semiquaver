@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 import UniformTypeIdentifiers
 
 struct SettingsTabView: View {
@@ -17,7 +18,7 @@ struct SettingsTabView: View {
 
     var body: some View {
         ZStack {
-            PlayerBackground()
+            MoiraColor.canvas.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
@@ -36,7 +37,7 @@ struct SettingsTabView: View {
                         }
                         .buttonStyle(PressScaleButtonStyle())
 
-                        Divider().overlay(Color.playerDivider)
+                        Divider().overlay(MoiraColor.border)
 
                         sectionGap
 
@@ -48,7 +49,7 @@ struct SettingsTabView: View {
                             isOn: $shuffleByDefault
                         )
 
-                        Divider().overlay(Color.playerDivider)
+                        Divider().overlay(MoiraColor.border)
 
                         sectionGap
 
@@ -56,7 +57,7 @@ struct SettingsTabView: View {
 
                         musicFolderRows
 
-                        Divider().overlay(Color.playerDivider)
+                        Divider().overlay(MoiraColor.border)
 
                         sectionGap
 
@@ -67,7 +68,7 @@ struct SettingsTabView: View {
                             subtitle: "Support free and open source multimedia"
                         )
 
-                        Divider().overlay(Color.playerDivider)
+                        Divider().overlay(MoiraColor.border)
 
                         Link(destination: URL(string: "https://github.com/rcsn01/Semiquaver")!) {
                             SettingsLinkRow(
@@ -116,15 +117,15 @@ struct SettingsTabView: View {
             HStack(spacing: 12) {
                 Image(systemName: statusIcon(for: record.status))
                     .font(.system(size: 16))
-                    .foregroundStyle(record.status == .available ? Color.playerAccent : .orange)
+                    .foregroundStyle(record.status == .available ? MoiraColor.successText : MoiraColor.warningText)
                     .accessibilityLabel(record.status.rawValue)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(record.displayName)
-                        .font(.bodyMedium())
-                        .foregroundStyle(Color.playerTextPrimary)
+                        .font(MoiraType.body(weight: .semibold))
+                        .foregroundStyle(MoiraColor.textPrimary)
                     Text(record.lastKnownPath)
-                        .font(.caption())
-                        .foregroundStyle(Color.playerTextSecondary)
+                        .font(MoiraType.small(weight: .medium))
+                        .foregroundStyle(MoiraColor.textMuted)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -133,7 +134,7 @@ struct SettingsTabView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
 
-            Divider().overlay(Color.playerDivider)
+            Divider().overlay(MoiraColor.border)
 
             Button {
                 showFolderPicker = true
@@ -142,7 +143,7 @@ struct SettingsTabView: View {
             }
             .buttonStyle(PressScaleButtonStyle())
 
-            Divider().overlay(Color.playerDivider)
+            Divider().overlay(MoiraColor.border)
 
             Button {
                 Task { await model.rescan(force: true) }
@@ -151,7 +152,7 @@ struct SettingsTabView: View {
             }
             .buttonStyle(PressScaleButtonStyle())
 
-            Divider().overlay(Color.playerDivider)
+            Divider().overlay(MoiraColor.border)
 
             Button {
                 confirmRemoveFolder = true
@@ -171,7 +172,7 @@ struct SettingsTabView: View {
             .buttonStyle(PressScaleButtonStyle())
         }
 
-        Divider().overlay(Color.playerDivider)
+        Divider().overlay(MoiraColor.border)
     }
 
     private func statusIcon(for status: MusicFolderStatus) -> String {
@@ -186,8 +187,8 @@ struct SettingsTabView: View {
         HStack {
             Spacer()
             Text("Settings")
-                .font(.display())
-                .foregroundStyle(Color.playerTextPrimary)
+                .font(Font.system(.largeTitle, design: .default).weight(.bold))
+                .foregroundStyle(MoiraColor.textPrimary)
             Spacer()
         }
         .padding(.horizontal, 20)
@@ -198,7 +199,7 @@ struct SettingsTabView: View {
     private var themePickerSheet: some View {
         NavigationStack {
             ZStack {
-                Color.playerBackground.ignoresSafeArea()
+                MoiraColor.canvas.ignoresSafeArea()
 
                 List {
                     ForEach(AppTheme.allCases, id: \.self) { theme in
@@ -208,11 +209,11 @@ struct SettingsTabView: View {
                         } label: {
                             HStack {
                                 Text(theme.displayName)
-                                    .foregroundStyle(Color.playerTextPrimary)
+                                    .foregroundStyle(MoiraColor.textPrimary)
                                 Spacer()
                                 if appTheme == theme {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(Color.playerAccent)
+                                        .foregroundStyle(MoiraColor.textPrimary)
                                 }
                             }
                         }
@@ -228,7 +229,7 @@ struct SettingsTabView: View {
                     Button("Cancel") {
                         showThemePicker = false
                     }
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textPrimary)
                 }
             }
         }
@@ -236,8 +237,8 @@ struct SettingsTabView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .bold, design: .rounded))
-            .foregroundStyle(Color.playerAccent)
+            .font(MoiraType.small(weight: .semibold))
+            .foregroundStyle(MoiraColor.textMuted)
             .textCase(.uppercase)
             .tracking(0.5)
             .padding(.horizontal, 20)

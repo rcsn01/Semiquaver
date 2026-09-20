@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct PlaylistRow: View {
     let playlist: PlaylistItem
@@ -6,7 +7,7 @@ struct PlaylistRow: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: MoiraRadius.card, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: playlist.colors,
@@ -15,23 +16,21 @@ struct PlaylistRow: View {
                         )
                     )
                     .frame(width: 52, height: 52)
-                    .modifier(GlowModifier(color: playlist.colors.first ?? .clear, radius: 12))
 
                 Image(systemName: "music.note")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.playerArtworkIcon)
-                    .shadow(color: Color.playerArtworkShadow, radius: 2, x: 0, y: 1)
+                    .foregroundStyle(Color.white.opacity(0.9))
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(playlist.title)
-                    .font(.bodyMedium())
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.textPrimary)
                     .lineLimit(1)
                 
                 Text(playlist.detail)
-                    .font(.caption())
-                    .foregroundStyle(Color.playerTextSecondary)
+                    .font(MoiraType.small(weight: .medium))
+                    .foregroundStyle(MoiraColor.textMuted)
                     .lineLimit(1)
             }
 
@@ -39,10 +38,10 @@ struct PlaylistRow: View {
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.playerTextTertiary)
+                .foregroundStyle(MoiraColor.textSubtle)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.card, style: .continuous))
     }
 }

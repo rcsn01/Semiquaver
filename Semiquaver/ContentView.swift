@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 enum Tab: String, CaseIterable {
     case library = "Library"
@@ -50,7 +51,7 @@ struct ContentView: View {
         .alert("Playback Error", isPresented: playbackErrorBinding) {
             Button("OK", role: .cancel) { model.player.clearError() }
         } message: { Text(model.player.errorMessage ?? "") }
-        .tint(.playerAccent)
+        .tint(MoiraColor.textPrimary)
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
@@ -81,7 +82,7 @@ struct ContentView: View {
                 Button { showNowPlaying = true } label: {
                     MiniPlayerContent(player: model.player)
                         .padding(.horizontal, 14).padding(.vertical, 10)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous))
                 }
                 .buttonStyle(PressScaleButtonStyle())
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 12)
@@ -96,12 +97,12 @@ struct ContentView: View {
             HStack(spacing: 0) {
                 ForEach(Tab.allCases, id: \.self) { tab in
                     Button {
-                        withAnimation(.easeInOut(duration: SemiquaverMetrics.quickAnimation)) { selectedTab = tab }
+                        withAnimation(.easeInOut(duration: MoiraMotion.normal)) { selectedTab = tab }
                     } label: {
                         Label(tab.rawValue, systemImage: tab.icon)
                             .labelStyle(.titleAndIcon)
-                            .font(.captionSmall())
-                            .foregroundStyle(selectedTab == tab ? Color.playerAccent : Color.playerTextSecondary)
+                            .font(MoiraType.caption(weight: .semibold))
+                            .foregroundStyle(selectedTab == tab ? MoiraColor.textPrimary : MoiraColor.textMuted)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                     }
                 }
@@ -225,7 +226,7 @@ private struct IOSExpandedShell: View {
                 TrackRow(track: track, isCurrent: player.isCurrentTrack(track), isPlaying: player.isPlaying, layoutMode: .expanded)
             }
             .buttonStyle(.plain)
-            .swipeActions(edge: .leading) { Button("Queue") { player.addToQueue(track) }.tint(.playerAccent) }
+            .swipeActions(edge: .leading) { Button("Queue") { player.addToQueue(track) } }
             .contextMenu {
                 Button("Play") { player.play(track: track, in: tracks, context: context) }
                 Button("Add to Queue") { player.addToQueue(track) }

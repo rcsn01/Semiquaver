@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 enum LibraryDestination: Hashable, Identifiable {
     case songs
@@ -256,7 +257,7 @@ struct AudioTrack: Identifiable, Hashable, Sendable, Codable {
             subtitle: subtitle.isEmpty ? durationText : subtitle,
             icon: isCurrent && isPlaying ? "waveform" : "music.note",
             colors: isCurrent
-                ? [Color.playerAccent.opacity(0.85), Color.playerAccent.opacity(0.55)]
+                ? [MoiraColor.textPrimary.opacity(0.85), MoiraColor.textPrimary.opacity(0.55)]
                 : MediaArtworkPalette.colors(for: id),
             artworkData: artworkData
         )

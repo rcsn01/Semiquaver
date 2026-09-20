@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct SettingsLinkRow: View {
     let title: String
@@ -9,13 +10,13 @@ struct SettingsLinkRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.bodyMedium())
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.textPrimary)
                 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.caption())
-                        .foregroundStyle(Color.playerTextSecondary)
+                        .font(MoiraType.small(weight: .medium))
+                        .foregroundStyle(MoiraColor.textMuted)
                 }
             }
 
@@ -24,13 +25,13 @@ struct SettingsLinkRow: View {
             if showsInfo {
                 Image(systemName: "info.circle")
                     .font(.system(size: 16))
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textMuted)
                     .padding(.trailing, 4)
             }
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.playerTextTertiary)
+                .foregroundStyle(MoiraColor.textSubtle)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -46,13 +47,13 @@ struct SettingsToggleRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.bodyMedium())
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.textPrimary)
                 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.caption())
-                        .foregroundStyle(Color.playerTextSecondary)
+                        .font(MoiraType.small(weight: .medium))
+                        .foregroundStyle(MoiraColor.textMuted)
                 }
             }
 
@@ -60,7 +61,6 @@ struct SettingsToggleRow: View {
 
             Toggle("", isOn: $isOn)
                 .labelsHidden()
-                .tint(Color.playerAccent)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

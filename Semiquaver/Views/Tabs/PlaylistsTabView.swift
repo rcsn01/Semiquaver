@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct PlaylistsTabView: View {
     @ObservedObject var playlistStorage: PlaylistStorage
@@ -44,7 +45,7 @@ struct PlaylistsTabView: View {
 
                             if playlist.id != playlistStorage.playlists.last?.id {
                                 Divider()
-                                    .overlay(Color.playerDivider)
+                                    .overlay(MoiraColor.border)
                                     .padding(.leading, 76)
                             }
                         }

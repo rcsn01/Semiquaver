@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 import UniformTypeIdentifiers
 
 enum AudioCategory: String, CaseIterable {
@@ -20,13 +21,13 @@ struct AudioTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PlayerBackground()
+                MoiraColor.canvas.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     header
 
                     Divider()
-                        .overlay(Color.playerDivider)
+                        .overlay(MoiraColor.border)
 
                     categoryBar
 
@@ -49,22 +50,22 @@ struct AudioTabView: View {
     private var header: some View {
         HStack(spacing: 12) {
             Text("Library")
-                .font(.display())
-                .foregroundStyle(Color.playerTextPrimary)
+                .font(Font.system(.largeTitle, design: .default).weight(.bold))
+                .foregroundStyle(MoiraColor.textPrimary)
 
             Spacer()
 
             Button(action: reloadLibrary) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textPrimary)
                     .frame(width: 40, height: 40)
-                    .background(Color.playerGlass)
+                    .background(MoiraColor.control)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                        RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous)
+                            .stroke(MoiraColor.border, lineWidth: 0.5)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous))
             }
             .buttonStyle(PressScaleButtonStyle())
         }
@@ -96,16 +97,16 @@ struct AudioTabView: View {
             }
         } label: {
             Text(category.rawValue)
-                .font(.system(size: 14, weight: isSelected ? .bold : .medium, design: .rounded))
-                .foregroundStyle(isSelected ? Color.playerBackground : Color.playerTextSecondary)
+                .font(MoiraType.small(weight: isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? MoiraColor.textPrimary : MoiraColor.textMuted)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(isSelected ? Color.playerAccent : Color.playerGlass)
+                    RoundedRectangle(cornerRadius: MoiraRadius.pill, style: .continuous)
+                        .fill(isSelected ? MoiraColor.controlSelected : MoiraColor.surface)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .stroke(isSelected ? Color.clear : Color.playerGlassBorder, lineWidth: 0.5)
+                            RoundedRectangle(cornerRadius: MoiraRadius.pill, style: .continuous)
+                                .stroke(isSelected ? Color.clear : MoiraColor.border, lineWidth: 0.5)
                         )
                 )
         }
@@ -192,7 +193,7 @@ struct AudioTabView: View {
 
             if summary.id != summaries.last?.id {
                 Divider()
-                    .overlay(Color.playerDivider)
+                    .overlay(MoiraColor.border)
                     .padding(.leading, 76)
             }
         }
@@ -219,7 +220,7 @@ struct AudioTabView: View {
 
             if summary.id != summaries.last?.id {
                 Divider()
-                    .overlay(Color.playerDivider)
+                    .overlay(MoiraColor.border)
                     .padding(.leading, 76)
             }
         }
@@ -268,7 +269,7 @@ struct AudioTabView: View {
 
                 if track.id != songs.last?.id {
                     Divider()
-                        .overlay(Color.playerDivider)
+                        .overlay(MoiraColor.border)
                         .padding(.leading, 76)
                 }
             }
@@ -281,7 +282,6 @@ struct AudioTabView: View {
                 } label: {
                     Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
                 }
-                .tint(Color.playerAccent)
             }
         }
     }
@@ -304,16 +304,16 @@ struct AudioTabView: View {
 
             Image(systemName: "folder.badge.music")
                 .font(.system(size: 56, weight: .light))
-                .foregroundStyle(Color.playerTextTertiary)
+                .foregroundStyle(MoiraColor.textSubtle)
                 .padding(.bottom, 8)
 
             Text("No music folder")
-                .font(.heading())
-                .foregroundStyle(Color.playerTextPrimary)
+                .font(MoiraType.title())
+                .foregroundStyle(MoiraColor.textPrimary)
 
             Text("Choose a folder in Files where your music lives.")
-                .font(.bodyRegular())
-                .foregroundStyle(Color.playerTextSecondary)
+                .font(MoiraType.body())
+                .foregroundStyle(MoiraColor.textMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -321,13 +321,13 @@ struct AudioTabView: View {
                 showFolderPicker = true
             } label: {
                 Text("Choose Music Folder")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.playerBackground)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.canvas)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color.playerAccent)
+                        RoundedRectangle(cornerRadius: MoiraRadius.pill, style: .continuous)
+                            .fill(MoiraColor.textPrimary)
                     )
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -343,17 +343,16 @@ struct AudioTabView: View {
 
             ZStack {
                 Circle()
-                    .stroke(Color.playerGlassBorder, lineWidth: 3)
+                    .stroke(MoiraColor.border, lineWidth: 3)
                     .frame(width: 48, height: 48)
 
                 ProgressView()
-                    .tint(Color.playerAccent)
                     .scaleEffect(1.2)
             }
 
             Text("Scanning your library...")
-                .font(.bodyRegular())
-                .foregroundStyle(Color.playerTextSecondary)
+                .font(MoiraType.body())
+                .foregroundStyle(MoiraColor.textMuted)
 
             Spacer()
         }
@@ -366,16 +365,16 @@ struct AudioTabView: View {
 
             Image(systemName: systemImage)
                 .font(.system(size: 56, weight: .light))
-                .foregroundStyle(Color.playerTextTertiary)
+                .foregroundStyle(MoiraColor.textSubtle)
                 .padding(.bottom, 8)
 
             Text(title)
-                .font(.heading())
-                .foregroundStyle(Color.playerTextPrimary)
+                .font(MoiraType.title())
+                .foregroundStyle(MoiraColor.textPrimary)
 
             Text(message)
-                .font(.bodyRegular())
-                .foregroundStyle(Color.playerTextSecondary)
+                .font(MoiraType.body())
+                .foregroundStyle(MoiraColor.textMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 

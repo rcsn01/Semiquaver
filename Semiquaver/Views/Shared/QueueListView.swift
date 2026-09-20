@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct QueueListView: View {
     @ObservedObject var player: AudioPlayerController
@@ -19,19 +20,19 @@ struct QueueListView: View {
                             trailingSystemImage: player.isPlaying ? "pause.fill" : "play.fill",
                             isHighlighted: false
                         )
-                        .listRowBackground(Color.playerAccent.opacity(0.06))
+                        .listRowBackground(MoiraColor.controlSelected)
                     } else {
                         Text("Nothing playing")
-                            .font(.bodyRegular())
-                            .foregroundStyle(Color.playerTextSecondary)
+                            .font(MoiraType.body())
+                            .foregroundStyle(MoiraColor.textMuted)
                             .listRowBackground(Color.clear)
                     }
                 } header: {
                     Text("Now Playing")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(MoiraType.small(weight: .semibold))
                         .textCase(.uppercase)
                         .tracking(0.5)
-                        .foregroundStyle(Color.playerAccent)
+                        .foregroundStyle(MoiraColor.textMuted)
                         .padding(.bottom, 4)
                 }
 
@@ -51,15 +52,14 @@ struct QueueListView: View {
                                 } label: {
                                     Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
                                 }
-                                .tint(Color.playerAccent)
                             }
                         }
                     } header: {
                         Text("History")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(MoiraType.small(weight: .semibold))
                             .textCase(.uppercase)
                             .tracking(0.5)
-                            .foregroundStyle(Color.playerAccent)
+                            .foregroundStyle(MoiraColor.textMuted)
                             .padding(.bottom, 4)
                     }
                 }
@@ -68,8 +68,8 @@ struct QueueListView: View {
                 Section {
                     if player.playbackQueue.isEmpty {
                         Text("End of queue")
-                            .font(.bodyRegular())
-                            .foregroundStyle(Color.playerTextSecondary)
+                            .font(MoiraType.body())
+                            .foregroundStyle(MoiraColor.textMuted)
                     } else {
                         ForEach(Array(player.playbackQueue.enumerated()), id: \.element.id) { index, track in
                             MediaRow(
@@ -93,10 +93,10 @@ struct QueueListView: View {
                 } header: {
                     HStack {
                         Text("Up Next")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(MoiraType.small(weight: .semibold))
                             .textCase(.uppercase)
                             .tracking(0.5)
-                            .foregroundStyle(Color.playerAccent)
+                            .foregroundStyle(MoiraColor.textMuted)
                             .padding(.bottom, 4)
 
                         Spacer()
@@ -108,8 +108,8 @@ struct QueueListView: View {
                                 }
                             } label: {
                                 Text(isEditing ? "Done" : "Edit")
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(Color.playerAccent)
+                                    .font(MoiraType.small(weight: .semibold))
+                                    .foregroundStyle(MoiraColor.textPrimary)
                             }
                         }
                     }
@@ -118,7 +118,7 @@ struct QueueListView: View {
             .listStyle(.plain)
             .environment(\.editMode, .constant(isEditing ? .active : .inactive))
             .scrollContentBackground(.hidden)
-            .background(Color.playerBackground)
+            .background(MoiraColor.canvas)
             .navigationTitle("Queue")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -126,7 +126,7 @@ struct QueueListView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textPrimary)
                 }
             }
         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct MediaRow: View {
     let item: MediaItem
@@ -17,13 +18,13 @@ struct MediaRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(.bodyMedium())
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.textPrimary)
                     .lineLimit(1)
 
                 Text(item.subtitle)
-                    .font(.caption())
-                    .foregroundStyle(Color.playerTextSecondary)
+                    .font(MoiraType.small(weight: .medium))
+                    .foregroundStyle(MoiraColor.textMuted)
                     .lineLimit(1)
             }
 
@@ -32,18 +33,18 @@ struct MediaRow: View {
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color.playerAccent)
+                    .foregroundStyle(MoiraColor.textPrimary)
                     .frame(width: 28, height: 28)
             } else if showsChevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color.playerTextTertiary)
+                    .foregroundStyle(MoiraColor.textSubtle)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(isHighlighted ? Color.playerAccent.opacity(0.06) : Color.clear)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(isHighlighted ? MoiraColor.controlSelected : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.card, style: .continuous))
     }
 
 }

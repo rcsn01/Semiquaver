@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 struct AlbumDetailView: View {
     let tracks: [AudioTrack]
@@ -10,7 +11,7 @@ struct AlbumDetailView: View {
 
     var body: some View {
         ZStack {
-            PlayerBackground()
+            MoiraColor.canvas.ignoresSafeArea()
 
             List {
                 Section {
@@ -43,18 +44,18 @@ struct AlbumDetailView: View {
 
             VStack(spacing: 6) {
                 Text(albumTitle)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.playerTextPrimary)
+                    .font(MoiraType.title())
+                    .foregroundStyle(MoiraColor.textPrimary)
                     .multilineTextAlignment(.center)
 
                 Text(artistName)
-                    .font(.bodyMedium())
-                    .foregroundStyle(Color.playerTextSecondary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .foregroundStyle(MoiraColor.textMuted)
                     .multilineTextAlignment(.center)
 
                 Text("\(tracks.count) songs")
-                    .font(.caption())
-                    .foregroundStyle(Color.playerTextTertiary)
+                    .font(MoiraType.small(weight: .medium))
+                    .foregroundStyle(MoiraColor.textSubtle)
             }
             .padding(.horizontal, 28)
         }
@@ -85,7 +86,7 @@ struct AlbumDetailView: View {
 
                 if track.id != tracks.last?.id {
                     Divider()
-                        .overlay(Color.playerDivider)
+                        .overlay(MoiraColor.border)
                         .padding(.leading, 76)
                 }
             }
@@ -98,7 +99,6 @@ struct AlbumDetailView: View {
                 } label: {
                     Label("Queue", systemImage: "text.line.first.and.arrowtriangle.forward")
                 }
-                .tint(Color.playerAccent)
             }
         }
     }

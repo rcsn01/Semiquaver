@@ -1,4 +1,5 @@
 import SwiftUI
+import MoirasiaUI
 
 /// iOS presentation shell around the platform-neutral Now Playing content.
 struct NowPlayingView: View {
@@ -17,7 +18,7 @@ struct NowPlayingView: View {
 
     var body: some View {
         ZStack {
-            PlayerBackground()
+            MoiraColor.canvas.ignoresSafeArea()
             VStack(spacing: 0) {
                 header
                 ScrollView(showsIndicators: false) {
@@ -59,13 +60,13 @@ struct NowPlayingView: View {
                 .frame(width: 100, alignment: .leading)
             Spacer()
             Text("Now Playing")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(MoiraType.small(weight: .semibold))
                 .textCase(.uppercase)
                 .tracking(0.5)
-                .foregroundStyle(Color.playerTextSecondary)
+                .foregroundStyle(MoiraColor.textMuted)
             Spacer()
             HStack(spacing: 12) {
-                headerButton(systemImage: "trash", foregroundColor: .playerAccent) {
+                headerButton(systemImage: "trash", foregroundColor: MoiraColor.dangerAction) {
                     showDeleteConfirmation = true
                 }
                 headerButton(systemImage: "list.bullet") { showQueue = true }
@@ -104,7 +105,7 @@ struct NowPlayingView: View {
 
     private func headerButton(
         systemImage: String,
-        foregroundColor: Color = .playerTextSecondary,
+        foregroundColor: Color = MoiraColor.textMuted,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -112,12 +113,12 @@ struct NowPlayingView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(foregroundColor)
                 .frame(width: 44, height: 44)
-                .background(Color.playerGlass)
+                .background(MoiraColor.control)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.playerGlassBorder, lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous)
+                        .stroke(MoiraColor.border, lineWidth: 0.5)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous))
         }
         .buttonStyle(PressScaleButtonStyle())
     }
