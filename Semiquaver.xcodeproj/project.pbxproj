@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		MOIR00000000000000000003 /* MoirasiaUI in Frameworks */ = {isa = PBXBuildFile; productRef = MOIR00000000000000000002; };
 		B00000000000000000000001 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000001 /* MediaModels.swift */; };
 		B00000000000000000000002 /* AudioPlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000002 /* AudioPlayerController.swift */; };
 		B00000000000000000000003 /* PlaylistStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = S00000000000000000000003 /* PlaylistStorage.swift */; };
@@ -84,13 +85,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				MOIR00000000000000000003 /* MoirasiaUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		M00000000000000000000011 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (MOIR00000000000000000003 /* MoirasiaUI in Frameworks */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		T00000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
@@ -154,6 +156,7 @@
 			);
 			name = Semiquaver;
 			packageProductDependencies = (
+				MOIR00000000000000000002 /* MoirasiaUI */,
 			);
 			productName = Semiquaver;
 			productReference = 0427FC1A2F9A67D800A20AD9 /* Semiquaver.app */;
@@ -173,7 +176,7 @@
 				M00000000000000000000002 /* Semiquaver-macOS */,
 			);
 			name = "Semiquaver-macOS";
-			packageProductDependencies = ();
+			packageProductDependencies = (MOIR00000000000000000002 /* MoirasiaUI */,);
 			productName = "Semiquaver-macOS";
 			productReference = M00000000000000000000001 /* Semiquaver-macOS.app */;
 			productType = "com.apple.product-type.application";
@@ -233,6 +236,9 @@
 			);
 			mainGroup = 0427FC112F9A67D800A20AD9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				MOIR00000000000000000001 /* XCLocalSwiftPackageReference "ui-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0427FC1B2F9A67D800A20AD9 /* Products */;
 			projectDirPath = "";
@@ -584,6 +590,21 @@
 		T00000000000000000000008 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = M00000000000000000000010 /* Semiquaver-macOS */; targetProxy = T00000000000000000000009 /* PBXContainerItemProxy */; };
 		I00000000000000000000008 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = 0427FC192F9A67D800A20AD9 /* Semiquaver */; targetProxy = I00000000000000000000009 /* PBXContainerItemProxy */; };
 /* End PBXTargetDependency section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		MOIR00000000000000000001 /* XCLocalSwiftPackageReference "ui-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../packages/ui-swift;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		MOIR00000000000000000002 /* MoirasiaUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = MOIR00000000000000000001;
+			productName = MoirasiaUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0427FC122F9A67D800A20AD9 /* Project object */;
 }

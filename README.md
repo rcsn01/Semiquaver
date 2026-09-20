@@ -2,6 +2,10 @@
 
 Semiquaver is a native SwiftUI music player for iOS and macOS. The Mac app indexes user-selected folders in place using sandbox-compatible security-scoped bookmarks; Mac playlists and settings stay local and never synchronize with iOS.
 
+## Monorepo colocation
+
+Both app targets link the shared `MoirasiaUI` token package through a local SwiftPM reference (`../../../packages/ui-swift`). That path resolves only while this repository sits at `apps/standalone/Semiquaver` inside the Moirasia monorepo — the same colocated-home assumption the Electron siblings make with their pnpm workspace links. A standalone clone of this repository will not build until the package reference is re-pointed.
+
 ## Build the macOS App
 
 The `Semiquaver-macOS` shared scheme targets macOS 15 or newer. From the project root:
