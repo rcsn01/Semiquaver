@@ -8,7 +8,12 @@ final class AppMusicLibrary: ObservableObject {
         didSet { rebuildDerivedCollections() }
     }
     @Published private(set) var isLoading = false
-    @Published private(set) var errorMessage: String?
+    @Published var errorMessage: String?
+    /// Whether a music folder is configured at all (even if currently
+    /// unavailable). Drives the "choose folder" empty state in the UI.
+    @Published var folderConfigured = false
+    /// Display name of the configured folder, if any.
+    @Published var folderName: String?
 
     @Published private(set) var songs: [AudioTrack] = []
     @Published private(set) var artists: [AudioGroupSummary] = []
@@ -17,8 +22,19 @@ final class AppMusicLibrary: ObservableObject {
     @Published private(set) var tracksByArtist: [String: [AudioTrack]] = [:]
     @Published private(set) var tracksByAlbumID: [String: [AudioTrack]] = [:]
 
-    init() {
+    private let cacheURL: URL
+    private var currentFolderURL: URL?
+
+    init(cacheURL: URL? = nil) {
+        self.cacheURL = cacheURL ?? Self.documentsCacheURL()
         rebuildDerivedCollections()
+    }
+
+    private nonisolated static func documentsCacheURL() -> URL {
+        let fileManager = FileManager.default
+        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+            ?? fileManager.temporaryDirectory
+        return documentsURL.appendingPathComponent("library_cache.json")
     }
 
     private func rebuildDerivedCollections() {
@@ -65,113 +81,70 @@ final class AppMusicLibrary: ObservableObject {
         .sorted { Self.sortTitles($0.title, $1.title) }
     }
 
-    func reload(force: Bool = false) async {
-        guard let musicFolderURL = AppMusicDirectory.ensureExists() else {
+    /// Scans the given folder. Passing nil clears the library; an absent
+    /// folder is the valid "no folder chosen yet" state, not an error.
+    func reload(from folderURL: URL?, force: Bool = false) async {
+        currentFolderURL = folderURL
+        guard let folderURL else {
             tracks = []
-            errorMessage = "Semiquaver couldn't access its Music folder."
+            errorMessage = nil
             return
         }
 
         isLoading = true
         errorMessage = nil
 
-        if !force, let cachedTracks = Self.loadCache(relativeTo: musicFolderURL) {
+        if !force, let cachedTracks = Self.loadCache(cacheURL: cacheURL) {
             tracks = cachedTracks
             isLoading = false
 
             let updatedTracks = await Task.detached(priority: .userInitiated) {
-                await Self.incrementalScan(in: musicFolderURL, existingTracks: cachedTracks)
+                await Self.incrementalScan(in: folderURL, existingTracks: cachedTracks)
             }.value
 
             if !Self.isTrackListEqual(updatedTracks, tracks) {
                 tracks = updatedTracks
-                Self.saveCache(tracks: updatedTracks)
+                Self.saveCache(tracks: updatedTracks, cacheURL: cacheURL)
             }
         } else {
             let scannedTracks = await Task.detached(priority: .userInitiated) {
-                await Self.scanTracks(in: musicFolderURL)
+                await Self.scanTracks(in: folderURL)
             }.value
 
             tracks = scannedTracks
             isLoading = false
-            Self.saveCache(tracks: scannedTracks)
+            Self.saveCache(tracks: scannedTracks, cacheURL: cacheURL)
         }
     }
 
-    private nonisolated static func cacheURL() -> URL? {
-        let fileManager = FileManager.default
-        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        return documentsURL.appendingPathComponent("library_cache.json")
+    /// Re-scans whatever folder was last passed to `reload(from:)`.
+    func reload(force: Bool = false) async {
+        await reload(from: currentFolderURL, force: force)
     }
 
-    private nonisolated static func loadCache(relativeTo musicFolderURL: URL) -> [AudioTrack]? {
-        guard let url = cacheURL(), FileManager.default.fileExists(atPath: url.path) else {
+    private nonisolated static func loadCache(cacheURL: URL) -> [AudioTrack]? {
+        guard FileManager.default.fileExists(atPath: cacheURL.path) else {
             return nil
         }
         do {
-            let data = try Data(contentsOf: url)
+            let data = try Data(contentsOf: cacheURL)
             let tracks = try JSONDecoder().decode([AudioTrack].self, from: data)
-            return tracks.compactMap { rebaseCachedTrack($0, to: musicFolderURL) }
+            // Drop entries whose files no longer exist; the incremental scan
+            // re-adds anything that still exists under the current folder.
+            return tracks.filter { FileManager.default.fileExists(atPath: $0.fileURL.path) }
         } catch {
             print("Failed to load library cache: \(error)")
             return nil
         }
     }
 
-    private nonisolated static func saveCache(tracks: [AudioTrack]) {
-        guard let url = cacheURL() else { return }
+    private nonisolated static func saveCache(tracks: [AudioTrack], cacheURL: URL) {
         do {
             let data = try JSONEncoder().encode(tracks)
-            try data.write(to: url, options: .atomic)
+            try data.write(to: cacheURL, options: .atomic)
         } catch {
             print("Failed to save library cache: \(error)")
         }
-    }
-
-    private nonisolated static func rebaseCachedTrack(_ track: AudioTrack, to musicFolderURL: URL) -> AudioTrack? {
-        let fileManager = FileManager.default
-
-        if fileManager.fileExists(atPath: track.fileURL.path) {
-            return track
-        }
-
-        guard let relativePath = cachedRelativePath(for: track.fileURL) else {
-            return nil
-        }
-
-        let rebasedURL = musicFolderURL.appendingPathComponent(relativePath)
-        guard fileManager.fileExists(atPath: rebasedURL.path) else {
-            return nil
-        }
-
-        return AudioTrack(
-            id: rebasedURL.path,
-            fileURL: rebasedURL,
-            title: track.title,
-            artist: track.artist,
-            album: track.album,
-            genre: track.genre,
-            duration: track.duration,
-            artworkData: track.artworkData,
-            lastModified: track.lastModified
-        )
-    }
-
-    private nonisolated static func cachedRelativePath(for fileURL: URL) -> String? {
-        let musicFolderName = "Music"
-        let pathComponents = fileURL.pathComponents
-        guard let musicIndex = pathComponents.firstIndex(of: musicFolderName) else {
-            return nil
-        }
-
-        let relativeComponents = pathComponents.dropFirst(musicIndex + 1)
-        guard !relativeComponents.isEmpty else {
-            return nil
-        }
-
-        return relativeComponents.joined(separator: "/")
     }
 
     private nonisolated static func incrementalScan(in directoryURL: URL, existingTracks: [AudioTrack]) async -> [AudioTrack] {

@@ -62,7 +62,8 @@ struct ContentView: View {
                     library: model.library,
                     player: model.player,
                     playlists: model.playlists,
-                    showNowPlayingFullScreen: $showNowPlaying
+                    showNowPlayingFullScreen: $showNowPlaying,
+                    onFolderPicked: { url in Task { await model.chooseFolder(url) } }
                 )
             case .playlists:
                 PlaylistsTabView(
@@ -72,7 +73,7 @@ struct ContentView: View {
                     showNowPlayingFullScreen: $showNowPlaying
                 )
             case .settings:
-                SettingsTabView(player: model.player)
+                SettingsTabView(model: model)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -213,7 +214,7 @@ private struct IOSExpandedShell: View {
                 if let playlist = playlists.playlists.first(where: { $0.id == id }) {
                     trackList(LibrarySearch.playlistTracks(playlist, allTracks: library.tracks, matching: query), title: playlist.title, context: .playlist(playlist))
                 } else { SemiquaverUnavailableState(title: "Playlist Not Found", message: "This playlist is no longer available.", systemImage: "music.note.list") }
-            case .settings: SettingsTabView(player: player)
+            case .settings: SettingsTabView(model: model)
             }
         }
     }
@@ -235,7 +236,7 @@ private struct IOSExpandedShell: View {
             }
         }
         .navigationTitle(title)
-        .overlay { if tracks.isEmpty { SemiquaverUnavailableState(title: query.isEmpty ? "No Music" : "No Search Results", message: "No matching available tracks.", systemImage: "music.note") } }
+        .overlay { if tracks.isEmpty { SemiquaverUnavailableState(title: query.isEmpty ? "No Music" : "No Search Results", message: query.isEmpty ? "Choose a music folder in Settings." : "No matching available tracks.", systemImage: "music.note") } }
     }
 
     private func groupList(_ groups: [AudioGroupSummary], kind: AudioGroupKind) -> some View {

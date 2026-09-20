@@ -41,7 +41,7 @@ struct NowPlayingView: View {
             Button("Delete", role: .destructive) { deleteActiveTrack() }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Are you sure you want to delete \"\(activeTrack.title)\"? This will remove the file from your Music folder.")
+            Text("Are you sure you want to delete \"\(activeTrack.title)\"? This will remove the file from your music folder.")
         }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },

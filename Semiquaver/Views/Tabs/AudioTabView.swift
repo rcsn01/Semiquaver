@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum AudioCategory: String, CaseIterable {
     case all = "All"
@@ -11,8 +12,10 @@ struct AudioTabView: View {
     @ObservedObject var player: AudioPlayerController
     @ObservedObject var playlists: PlaylistStorage
     @Binding var showNowPlayingFullScreen: Bool
+    let onFolderPicked: (URL) -> Void
     @State private var selectedCategory: AudioCategory = .all
     @State private var searchText = ""
+    @State private var showFolderPicker = false
  
     var body: some View {
         NavigationStack {
@@ -32,6 +35,13 @@ struct AudioTabView: View {
             }
         }
         .searchable(text: $searchText, prompt: "Songs, artists, albums, genres")
+        .fileImporter(
+            isPresented: $showFolderPicker,
+            allowedContentTypes: [UTType.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first { onFolderPicked(url) }
+        }
     }
 
     // MARK: - Header
@@ -114,10 +124,12 @@ struct AudioTabView: View {
                 message: errorMessage,
                 systemImage: "externaldrive.badge.exclamationmark"
             )
+        } else if library.songs.isEmpty && !library.folderConfigured {
+            chooseFolderState
         } else if library.songs.isEmpty {
             emptyState(
                 title: "No music found",
-                message: "Add audio files to your Music folder and pull to refresh.",
+                message: "The chosen folder has no audio files.",
                 systemImage: "music.note"
             )
         } else {
@@ -284,6 +296,46 @@ struct AudioTabView: View {
     }
 
     // MARK: - States
+
+    /// Shown when no music folder is configured yet: invites picking one.
+    private var chooseFolderState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "folder.badge.music")
+                .font(.system(size: 56, weight: .light))
+                .foregroundStyle(Color.playerTextTertiary)
+                .padding(.bottom, 8)
+
+            Text("No music folder")
+                .font(.heading())
+                .foregroundStyle(Color.playerTextPrimary)
+
+            Text("Choose a folder in Files where your music lives.")
+                .font(.bodyRegular())
+                .foregroundStyle(Color.playerTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Button {
+                showFolderPicker = true
+            } label: {
+                Text("Choose Music Folder")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.playerBackground)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color.playerAccent)
+                    )
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Spacer()
+        }
+        .padding(.bottom, 24)
+    }
 
     private var loadingState: some View {
         VStack(spacing: 20) {
