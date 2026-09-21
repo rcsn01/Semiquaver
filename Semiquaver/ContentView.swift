@@ -23,6 +23,12 @@ struct ContentView: View {
 
     init() {
         _model = StateObject(wrappedValue: IOSAppModel())
+        #if DEBUG
+        if let requested = ProcessInfo.processInfo.environment["SEMIQUAVER_START_TAB"]?.lowercased(),
+           let tab = Tab.allCases.first(where: { $0.rawValue.lowercased() == requested }) {
+            _selectedTab = State(initialValue: tab)
+        }
+        #endif
     }
 
     init(model: IOSAppModel) {
@@ -56,26 +62,31 @@ struct ContentView: View {
     }
 
     private var compactShell: some View {
-        Group {
-            switch selectedTab {
-            case .library:
-                AudioTabView(
-                    library: model.library,
-                    player: model.player,
-                    playlists: model.playlists,
-                    showNowPlayingFullScreen: $showNowPlaying,
-                    onFolderPicked: { url in Task { await model.chooseFolder(url) } }
-                )
-            case .playlists:
-                PlaylistsTabView(
-                    playlistStorage: model.playlists,
-                    library: model.library,
-                    player: model.player,
-                    showNowPlayingFullScreen: $showNowPlaying
-                )
-            case .settings:
+        TabView(selection: $selectedTab) {
+            AudioTabView(
+                library: model.library,
+                player: model.player,
+                playlists: model.playlists,
+                showNowPlayingFullScreen: $showNowPlaying,
+                onFolderPicked: { url in Task { await model.chooseFolder(url) } }
+            )
+            .tabItem { Label(Tab.library.rawValue, systemImage: Tab.library.icon) }
+            .tag(Tab.library)
+
+            PlaylistsTabView(
+                playlistStorage: model.playlists,
+                library: model.library,
+                player: model.player,
+                showNowPlayingFullScreen: $showNowPlaying
+            )
+            .tabItem { Label(Tab.playlists.rawValue, systemImage: Tab.playlists.icon) }
+            .tag(Tab.playlists)
+
+            NavigationStack {
                 SettingsTabView(model: model)
             }
+            .tabItem { Label(Tab.settings.rawValue, systemImage: Tab.settings.icon) }
+            .tag(Tab.settings)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if model.player.currentTrack != nil {
@@ -88,27 +99,6 @@ struct ContentView: View {
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 12)
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { compactTabBar }
-    }
-
-    private var compactTabBar: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack(spacing: 0) {
-                ForEach(Tab.allCases, id: \.self) { tab in
-                    Button {
-                        withAnimation(.easeInOut(duration: MoiraMotion.normal)) { selectedTab = tab }
-                    } label: {
-                        Label(tab.rawValue, systemImage: tab.icon)
-                            .labelStyle(.titleAndIcon)
-                            .font(MoiraType.caption(weight: .semibold))
-                            .foregroundStyle(selectedTab == tab ? MoiraColor.textPrimary : MoiraColor.textMuted)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
-                    }
-                }
-            }
-        }
-        .background(.bar)
     }
 
     private var playbackErrorBinding: Binding<Bool> {

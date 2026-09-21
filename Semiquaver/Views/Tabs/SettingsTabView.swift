@@ -21,8 +21,6 @@ struct SettingsTabView: View {
             MoiraColor.canvas.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                header
-
                 ScrollView(showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 0) {
                         sectionHeader("Appearance")
@@ -82,6 +80,7 @@ struct SettingsTabView: View {
                 }
             }
         }
+        .navigationTitle("Settings")
         .fileImporter(
             isPresented: $showFolderPicker,
             allowedContentTypes: [UTType.folder],
@@ -181,19 +180,6 @@ struct SettingsTabView: View {
         case .unavailable: "exclamationmark.triangle.fill"
         case .permissionRequired: "exclamationmark.lock.fill"
         }
-    }
-
-    private var header: some View {
-        HStack {
-            Spacer()
-            Text("Settings")
-                .font(Font.system(.largeTitle, design: .default).weight(.bold))
-                .foregroundStyle(MoiraColor.textPrimary)
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 16)
     }
 
     private var themePickerSheet: some View {

@@ -79,15 +79,7 @@ final class PlaylistStorage: ObservableObject, @unchecked Sendable {
 
     private func load() {
         guard let url = fileURL, FileManager.default.fileExists(atPath: url.path) else {
-            #if os(macOS)
             playlists = []
-            #else
-            // Keep the existing iOS first-launch experience unchanged.
-            playlists = MockLibrary.playlists.map {
-                PlaylistItem(title: $0.title, detail: $0.detail, trackIDs: [])
-            }
-            #endif
-            save()
             return
         }
         do {

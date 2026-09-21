@@ -24,14 +24,19 @@ struct AudioTabView: View {
                 MoiraColor.canvas.ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    header
-
-                    Divider()
-                        .overlay(MoiraColor.border)
-
                     categoryBar
 
                     content
+                }
+            }
+        }
+        .navigationTitle("Library")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    reloadLibrary()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
                 }
             }
         }
@@ -43,35 +48,6 @@ struct AudioTabView: View {
         ) { result in
             if case .success(let urls) = result, let url = urls.first { onFolderPicked(url) }
         }
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        HStack(spacing: 12) {
-            Text("Library")
-                .font(Font.system(.largeTitle, design: .default).weight(.bold))
-                .foregroundStyle(MoiraColor.textPrimary)
-
-            Spacer()
-
-            Button(action: reloadLibrary) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(MoiraColor.textPrimary)
-                    .frame(width: 40, height: 40)
-                    .background(MoiraColor.control)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous)
-                            .stroke(MoiraColor.border, lineWidth: 0.5)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 16)
     }
 
     // MARK: - Category Bar

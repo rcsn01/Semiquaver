@@ -13,12 +13,10 @@ struct PlaylistsTabView: View {
     @State private var editedTitle = ""
 
     var body: some View {
-        PlayerScaffold(
-            title: "Playlists",
-            trailingSystemImage: "plus",
-            trailingAction: { showingCreatePlaylist = true }
-        ) {
-            NavigationStack {
+        NavigationStack {
+            ZStack {
+                MoiraColor.canvas.ignoresSafeArea()
+
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         ForEach(playlistStorage.playlists) { playlist in
@@ -53,6 +51,16 @@ struct PlaylistsTabView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 32)
                     .padding(.horizontal, 12)
+                }
+            }
+            .navigationTitle("Playlists")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingCreatePlaylist = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
