@@ -53,15 +53,12 @@ struct PlaylistsTabView: View {
                     .padding(.horizontal, 12)
                 }
             }
-            .navigationTitle("Playlists")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingCreatePlaylist = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
+            .semiquaverTabHeader(
+                "Playlists",
+                actionSystemImage: "plus",
+                actionLabel: "New Playlist"
+            ) {
+                showingCreatePlaylist = true
             }
         }
         .alert("New Playlist", isPresented: $showingCreatePlaylist) {

@@ -299,39 +299,16 @@ private extension AudioGroupKind {
 // MARK: - Artwork Palette
 
 enum MediaArtworkPalette {
-    /// A curated set of sophisticated, muted color pairings for cover-art-style thumbnails.
+    /// Token-driven color pairings for cover-art-style thumbnails.
     private static let palettes: [[Color]] = [
-        // Sunset – warm amber to muted rose
-        [Color(red: 0.90, green: 0.55, blue: 0.35),
-         Color(red: 0.75, green: 0.40, blue: 0.45)],
-
-        // Ocean – deep teal to slate
-        [Color(red: 0.25, green: 0.50, blue: 0.55),
-         Color(red: 0.15, green: 0.30, blue: 0.40)],
-
-        // Sage – soft green to dusty blue
-        [Color(red: 0.50, green: 0.60, blue: 0.50),
-         Color(red: 0.35, green: 0.45, blue: 0.55)],
-
-        // Berry – muted berry to deep plum
-        [Color(red: 0.60, green: 0.35, blue: 0.50),
-         Color(red: 0.40, green: 0.25, blue: 0.45)],
-
-        // Stone – warm grey to cool charcoal
-        [Color(red: 0.55, green: 0.55, blue: 0.55),
-         Color(red: 0.30, green: 0.30, blue: 0.35)],
-
-        // Dusk – soft violet to midnight blue
-        [Color(red: 0.45, green: 0.40, blue: 0.65),
-         Color(red: 0.20, green: 0.20, blue: 0.40)],
-
-        // Sand – beige to dusty rose
-        [Color(red: 0.75, green: 0.65, blue: 0.55),
-         Color(red: 0.60, green: 0.45, blue: 0.45)],
-
-        // Forest — deep olive to dark moss
-        [Color(red: 0.35, green: 0.40, blue: 0.30),
-         Color(red: 0.20, green: 0.25, blue: 0.20)]
+        [MoiraColor.warningText, MoiraColor.dangerAction],
+        [MoiraColor.successText, MoiraColor.borderStrong],
+        [MoiraColor.successSurface, MoiraColor.textMuted],
+        [MoiraColor.dangerAction, MoiraColor.dangerText],
+        [MoiraColor.borderStrong, MoiraColor.textSubtle],
+        [MoiraColor.textMuted, MoiraColor.border],
+        [MoiraColor.warningSurface, MoiraColor.dangerSurface],
+        [MoiraColor.successText, MoiraColor.textPrimary]
     ]
 
     static func colors(for seed: String) -> [Color] {

@@ -46,7 +46,7 @@ struct GenreDetailView: View {
 
                 Image(systemName: "guitars.fill")
                     .font(.system(size: 56, weight: .light))
-                    .foregroundStyle(Color.white.opacity(0.9))
+                    .foregroundStyle(MoiraColor.textPrimary.opacity(0.9))
             }
 
             VStack(spacing: 4) {

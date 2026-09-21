@@ -9,12 +9,9 @@ import SwiftUI
 
 @main
 struct SemiquaverApp: App {
-    @AppStorage("appTheme") private var appTheme: AppTheme = .automatic
-
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(appTheme.colorScheme)
         }
     }
 }

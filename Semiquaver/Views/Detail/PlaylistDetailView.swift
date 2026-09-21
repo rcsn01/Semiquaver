@@ -56,7 +56,7 @@ struct PlaylistDetailView: View {
 
                 Image(systemName: "music.note")
                     .font(.system(size: 72, weight: .light))
-                    .foregroundStyle(Color.white.opacity(0.9))
+                    .foregroundStyle(MoiraColor.textPrimary.opacity(0.9))
             }
 
             VStack(spacing: 6) {

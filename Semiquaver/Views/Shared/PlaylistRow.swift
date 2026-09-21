@@ -19,7 +19,7 @@ struct PlaylistRow: View {
 
                 Image(systemName: "music.note")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.9))
+                    .foregroundStyle(MoiraColor.textPrimary.opacity(0.9))
             }
 
             VStack(alignment: .leading, spacing: 3) {

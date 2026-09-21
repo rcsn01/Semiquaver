@@ -5,15 +5,16 @@ import UniformTypeIdentifiers
 struct SettingsTabView: View {
     @ObservedObject var model: IOSAppModel
     @ObservedObject private var folderStore: MusicFolderStore
-    @AppStorage("appTheme") private var appTheme: AppTheme = .automatic
+    @Binding var appTheme: AppTheme
     @AppStorage("shuffleByDefault") private var shuffleByDefault = false
     @State private var showThemePicker = false
     @State private var showFolderPicker = false
     @State private var confirmRemoveFolder = false
 
-    init(model: IOSAppModel) {
+    init(model: IOSAppModel, appTheme: Binding<AppTheme>) {
         self.model = model
         _folderStore = ObservedObject(wrappedValue: model.folderStore)
+        _appTheme = appTheme
     }
 
     var body: some View {
@@ -80,7 +81,7 @@ struct SettingsTabView: View {
                 }
             }
         }
-        .navigationTitle("Settings")
+        .semiquaverTabHeader("Settings")
         .fileImporter(
             isPresented: $showFolderPicker,
             allowedContentTypes: [UTType.folder],

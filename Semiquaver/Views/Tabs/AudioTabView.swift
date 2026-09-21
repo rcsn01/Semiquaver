@@ -29,15 +29,12 @@ struct AudioTabView: View {
                     content
                 }
             }
-        }
-        .navigationTitle("Library")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    reloadLibrary()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
+            .semiquaverTabHeader(
+                "Library",
+                actionSystemImage: "arrow.clockwise",
+                actionLabel: "Reload Library"
+            ) {
+                reloadLibrary()
             }
         }
         .searchable(text: $searchText, prompt: "Songs, artists, albums, genres")
@@ -53,40 +50,18 @@ struct AudioTabView: View {
     // MARK: - Category Bar
 
     private var categoryBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(AudioCategory.allCases, id: \.self) { category in
-                    categoryButton(category)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-    }
-
-    private func categoryButton(_ category: AudioCategory) -> some View {
-        let isSelected = selectedCategory == category
-
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                selectedCategory = category
-            }
-        } label: {
+        SemiquaverGlassSelectionBar(
+            AudioCategory.allCases,
+            selection: $selectedCategory
+        ) { category, isSelected in
             Text(category.rawValue)
                 .font(MoiraType.small(weight: isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? MoiraColor.textPrimary : MoiraColor.textMuted)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: MoiraRadius.pill, style: .continuous)
-                        .fill(isSelected ? MoiraColor.controlSelected : MoiraColor.surface)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MoiraRadius.pill, style: .continuous)
-                                .stroke(isSelected ? Color.clear : MoiraColor.border, lineWidth: 0.5)
-                        )
-                )
         }
-        .buttonStyle(PressScaleButtonStyle())
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+            .accessibilityLabel("Library Category")
     }
 
     // MARK: - Content

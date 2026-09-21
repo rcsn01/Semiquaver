@@ -17,6 +17,7 @@ enum Tab: String, CaseIterable {
 
 struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @AppStorage("appTheme") private var appTheme: AppTheme = .automatic
     @StateObject private var model: IOSAppModel
     @State private var selectedTab: Tab = .library
     @State private var showNowPlaying = false
@@ -38,7 +39,11 @@ struct ContentView: View {
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {
-                IOSExpandedShell(model: model, showNowPlaying: $showNowPlaying)
+                IOSExpandedShell(
+                    model: model,
+                    appTheme: $appTheme,
+                    showNowPlaying: $showNowPlaying
+                )
             } else {
                 compactShell
             }
@@ -58,6 +63,9 @@ struct ContentView: View {
             Button("OK", role: .cancel) { model.player.clearError() }
         } message: { Text(model.player.errorMessage ?? "") }
         .tint(MoiraColor.textPrimary)
+        .font(MoiraType.body())
+        .foregroundStyle(MoiraColor.textPrimary)
+        .preferredColorScheme(appTheme.colorScheme)
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
@@ -70,6 +78,7 @@ struct ContentView: View {
                 showNowPlayingFullScreen: $showNowPlaying,
                 onFolderPicked: { url in Task { await model.chooseFolder(url) } }
             )
+            .toolbar(.hidden, for: .tabBar)
             .tabItem { Label(Tab.library.rawValue, systemImage: Tab.library.icon) }
             .tag(Tab.library)
 
@@ -79,25 +88,41 @@ struct ContentView: View {
                 player: model.player,
                 showNowPlayingFullScreen: $showNowPlaying
             )
+            .toolbar(.hidden, for: .tabBar)
             .tabItem { Label(Tab.playlists.rawValue, systemImage: Tab.playlists.icon) }
             .tag(Tab.playlists)
 
             NavigationStack {
-                SettingsTabView(model: model)
+                SettingsTabView(model: model, appTheme: $appTheme)
             }
+            .toolbar(.hidden, for: .tabBar)
             .tabItem { Label(Tab.settings.rawValue, systemImage: Tab.settings.icon) }
             .tag(Tab.settings)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if model.player.currentTrack != nil {
-                Button { showNowPlaying = true } label: {
-                    MiniPlayerContent(player: model.player)
-                        .padding(.horizontal, 14).padding(.vertical, 10)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous))
+            VStack(spacing: 8) {
+                if model.player.currentTrack != nil {
+                    Button { showNowPlaying = true } label: {
+                        MiniPlayerContent(player: model.player)
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .background(MoiraColor.surfaceRaised, in: RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous))
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
                 }
-                .buttonStyle(PressScaleButtonStyle())
-                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 12)
+
+                SemiquaverGlassSelectionBar(Tab.allCases, selection: $selectedTab) { tab, isSelected in
+                    VStack(spacing: 2) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 16, weight: isSelected ? .semibold : .medium))
+                        Text(tab.rawValue)
+                            .font(MoiraType.small(weight: isSelected ? .semibold : .medium))
+                    }
+                    .foregroundStyle(isSelected ? MoiraColor.textPrimary : MoiraColor.textMuted)
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
         }
     }
 
@@ -111,6 +136,7 @@ private struct IOSExpandedShell: View {
     @ObservedObject private var player: AudioPlayerController
     @ObservedObject private var library: AppMusicLibrary
     @ObservedObject private var playlists: PlaylistStorage
+    @Binding var appTheme: AppTheme
     @Binding var showNowPlaying: Bool
     @State private var selection: LibraryDestination? = .songs
     @State private var query = ""
@@ -120,11 +146,16 @@ private struct IOSExpandedShell: View {
     @State private var renamingPlaylist: PlaylistItem?
     @State private var deletingPlaylist: PlaylistItem?
 
-    init(model: IOSAppModel, showNowPlaying: Binding<Bool>) {
+    init(
+        model: IOSAppModel,
+        appTheme: Binding<AppTheme>,
+        showNowPlaying: Binding<Bool>
+    ) {
         self.model = model
         _player = ObservedObject(wrappedValue: model.player)
         _library = ObservedObject(wrappedValue: model.library)
         _playlists = ObservedObject(wrappedValue: model.playlists)
+        _appTheme = appTheme
         _showNowPlaying = showNowPlaying
     }
 
@@ -164,7 +195,7 @@ private struct IOSExpandedShell: View {
                 PlaybackProgress(player: player).frame(maxWidth: 360)
                 Button("Queue", systemImage: "list.bullet") { showQueue = true }.labelStyle(.iconOnly)
             }
-            .padding(.horizontal, 20).frame(height: SemiquaverLayoutMode.expanded.playerHeight).background(.bar)
+            .padding(.horizontal, 20).frame(height: SemiquaverLayoutMode.expanded.playerHeight).background(MoiraColor.surface)
         }
         .sheet(isPresented: $showQueue) { NavigationStack { QueueContent(player: player, layoutMode: .expanded) } }
         .alert("New Playlist", isPresented: $creatingPlaylist) {
@@ -205,7 +236,7 @@ private struct IOSExpandedShell: View {
                 if let playlist = playlists.playlists.first(where: { $0.id == id }) {
                     trackList(LibrarySearch.playlistTracks(playlist, allTracks: library.tracks, matching: query), title: playlist.title, context: .playlist(playlist))
                 } else { SemiquaverUnavailableState(title: "Playlist Not Found", message: "This playlist is no longer available.", systemImage: "music.note.list") }
-            case .settings: SettingsTabView(model: model)
+            case .settings: SettingsTabView(model: model, appTheme: $appTheme)
             }
         }
     }

@@ -6,6 +6,103 @@ import UIKit
 import AppKit
 #endif
 
+private struct SemiquaverTabHeaderModifier: ViewModifier {
+    let title: String
+    let actionSystemImage: String?
+    let actionLabel: String?
+    let action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        content
+            .navigationTitle(title)
+            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbarBackground(MoiraColor.canvas, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                if let actionSystemImage, let action {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: action) {
+                            Image(systemName: actionSystemImage)
+                        }
+                        .accessibilityLabel(actionLabel ?? title)
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func semiquaverTabHeader(
+        _ title: String,
+        actionSystemImage: String? = nil,
+        actionLabel: String? = nil,
+        action: (() -> Void)? = nil
+    ) -> some View {
+        modifier(
+            SemiquaverTabHeaderModifier(
+                title: title,
+                actionSystemImage: actionSystemImage,
+                actionLabel: actionLabel,
+                action: action
+            )
+        )
+    }
+}
+
+struct SemiquaverGlassSelectionBar<Item: Hashable, Label: View>: View {
+    let items: [Item]
+    @Binding var selection: Item
+    let label: (Item, Bool) -> Label
+    @Namespace private var selectionAnimation
+
+    init(
+        _ items: [Item],
+        selection: Binding<Item>,
+        @ViewBuilder label: @escaping (Item, Bool) -> Label
+    ) {
+        self.items = items
+        _selection = selection
+        self.label = label
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(items, id: \.self) { item in
+                let isSelected = selection == item
+
+                Button {
+                    withAnimation(.snappy(duration: 0.25)) {
+                        selection = item
+                    }
+                } label: {
+                    label(item, isSelected)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background {
+                            if isSelected {
+                                Capsule()
+                                    .fill(MoiraColor.controlSelected)
+                                    .matchedGeometryEffect(
+                                        id: "selection",
+                                        in: selectionAnimation
+                                    )
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .background(MoiraColor.surface, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(MoiraColor.border, lineWidth: 0.5)
+        }
+    }
+}
+
 struct ArtworkView: View {
     let data: Data?
     let seed: String
@@ -25,7 +122,7 @@ struct ArtworkView: View {
                 .overlay {
                     Image(systemName: systemImage)
                         .font(.system(size: size * 0.34, weight: .semibold))
-                        .foregroundStyle(Color.white.opacity(0.9))
+                        .foregroundStyle(MoiraColor.textPrimary.opacity(0.9))
                 }
             }
         }
@@ -57,7 +154,7 @@ struct TrackRow: View {
             ArtworkView(data: track.artworkData, seed: track.id, size: layoutMode.artworkSize)
             VStack(alignment: .leading, spacing: MoiraSpace.x1) {
                 Text(track.title).font(MoiraType.body(weight: .semibold)).lineLimit(1)
-                Text(track.detailText).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+                Text(track.detailText).font(MoiraType.small(weight: .medium)).foregroundStyle(MoiraColor.textMuted).lineLimit(1)
             }
             Spacer(minLength: MoiraSpace.x2)
             if isCurrent {
@@ -65,7 +162,7 @@ struct TrackRow: View {
                     .foregroundStyle(MoiraColor.textPrimary)
                     .accessibilityLabel(isPlaying ? "Playing" : "Paused")
             }
-            Text(track.durationText).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).monospacedDigit()
+            Text(track.durationText).font(MoiraType.small(weight: .medium)).foregroundStyle(MoiraColor.textMuted).monospacedDigit()
         }
         .frame(minHeight: layoutMode.rowHeight)
         .padding(.horizontal, MoiraSpace.x2)
@@ -90,10 +187,10 @@ struct MediaGroupRow: View {
             )
             VStack(alignment: .leading, spacing: MoiraSpace.x1) {
                 Text(group.title).font(MoiraType.body(weight: .semibold)).lineLimit(1)
-                Text(group.subtitle).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+                Text(group.subtitle).font(MoiraType.small(weight: .medium)).foregroundStyle(MoiraColor.textMuted).lineLimit(1)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
+            Image(systemName: "chevron.right").font(MoiraType.caption(weight: .bold)).foregroundStyle(MoiraColor.textSubtle)
         }
         .frame(minHeight: layoutMode.rowHeight)
         .contentShape(Rectangle())
@@ -124,8 +221,8 @@ struct CollectionHeader: View {
 
     private var labels: some View {
         VStack(alignment: layoutMode == .compact ? .center : .leading, spacing: MoiraSpace.x2) {
-            Text(title).font(.title.bold()).multilineTextAlignment(layoutMode == .compact ? .center : .leading)
-            if let subtitle { Text(subtitle).font(.body).foregroundStyle(.secondary) }
+            Text(title).font(MoiraType.titleLarge()).foregroundStyle(MoiraColor.textPrimary).multilineTextAlignment(layoutMode == .compact ? .center : .leading)
+            if let subtitle { Text(subtitle).font(MoiraType.bodyLarge()).foregroundStyle(MoiraColor.textMuted) }
         }
     }
 }
@@ -139,11 +236,11 @@ struct MiniPlayerContent: View {
                 ArtworkView(data: track.artworkData, seed: track.id, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.title).font(MoiraType.body(weight: .semibold)).lineLimit(1)
-                    Text(track.artist).font(MoiraType.small(weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+                    Text(track.artist).font(MoiraType.small(weight: .medium)).foregroundStyle(MoiraColor.textMuted).lineLimit(1)
                 }
             } else {
-                Image(systemName: "music.note").foregroundStyle(.secondary)
-                Text("Nothing Playing").foregroundStyle(.secondary)
+                Image(systemName: "music.note").foregroundStyle(MoiraColor.textMuted)
+                Text("Nothing Playing").font(MoiraType.body()).foregroundStyle(MoiraColor.textMuted)
             }
             Spacer()
             Button { player.togglePlayPause() } label: {
@@ -175,7 +272,7 @@ struct PlaybackProgress: View {
             HStack {
                 Text(Self.time(player.currentTime)); Spacer(); Text(Self.time(player.duration))
             }
-            .font(MoiraType.caption(weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+            .font(MoiraType.caption(weight: .semibold)).foregroundStyle(MoiraColor.textMuted).monospacedDigit()
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Playback position \(Self.time(player.currentTime)) of \(Self.time(player.duration))")
@@ -232,9 +329,9 @@ struct NowPlayingContent: View {
             if let track = player.currentTrack {
                 ArtworkView(data: track.artworkData, seed: track.id, size: layoutMode == .compact ? 280 : 240)
                 VStack(spacing: MoiraSpace.x2) {
-                    Text(track.title).font(.title.bold()).lineLimit(2).multilineTextAlignment(.center)
-                    Text(track.detailText).foregroundStyle(.secondary).lineLimit(1)
-                    Text(player.playbackContext.shortName).font(MoiraType.small(weight: .medium)).foregroundStyle(.tertiary)
+                    Text(track.title).font(MoiraType.titleLarge()).foregroundStyle(MoiraColor.textPrimary).lineLimit(2).multilineTextAlignment(.center)
+                    Text(track.detailText).font(MoiraType.bodyLarge()).foregroundStyle(MoiraColor.textMuted).lineLimit(1)
+                    Text(player.playbackContext.shortName).font(MoiraType.small(weight: .medium)).foregroundStyle(MoiraColor.textSubtle)
                 }
                 PlaybackProgress(player: player)
                 PlayerControls(player: player, prominent: true)
@@ -274,17 +371,17 @@ struct QueueContent: View {
             Section("Now Playing") {
                 if let track = player.currentTrack {
                     TrackRow(track: track, isCurrent: true, isPlaying: player.isPlaying, layoutMode: layoutMode)
-                } else { Text("Nothing Playing").foregroundStyle(.secondary) }
+                } else { Text("Nothing Playing").font(MoiraType.body()).foregroundStyle(MoiraColor.textMuted) }
             }
             Section("History") {
-                if player.playbackHistory.isEmpty { Text("No History").foregroundStyle(.secondary) }
+                if player.playbackHistory.isEmpty { Text("No History").font(MoiraType.body()).foregroundStyle(MoiraColor.textMuted) }
                 ForEach(player.playbackHistory) { track in
                     TrackRow(track: track, layoutMode: layoutMode)
                         .contextMenu { Button("Add to Queue") { player.addToQueue(track) } }
                 }
             }
             Section("Up Next") {
-                if player.playbackQueue.isEmpty { Text("End of Queue").foregroundStyle(.secondary) }
+                if player.playbackQueue.isEmpty { Text("End of Queue").font(MoiraType.body()).foregroundStyle(MoiraColor.textMuted) }
                 ForEach(Array(player.playbackQueue.enumerated()), id: \.offset) { index, track in
                     TrackRow(track: track, layoutMode: layoutMode)
                         .contextMenu { Button("Remove", role: .destructive) { player.removeFromQueue(at: index) } }
@@ -305,7 +402,19 @@ struct SemiquaverUnavailableState: View {
     let systemImage: String
 
     var body: some View {
-        ContentUnavailableView(title, systemImage: systemImage, description: Text(message))
+        VStack(spacing: MoiraSpace.x3) {
+            Image(systemName: systemImage)
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(MoiraColor.textSubtle)
+            Text(title)
+                .font(MoiraType.title())
+                .foregroundStyle(MoiraColor.textPrimary)
+            Text(message)
+                .font(MoiraType.body())
+                .foregroundStyle(MoiraColor.textMuted)
+                .multilineTextAlignment(.center)
+        }
+        .padding(MoiraSpace.x6)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -314,7 +423,9 @@ struct SemiquaverLoadingState: View {
     var body: some View {
         VStack(spacing: MoiraSpace.x4) {
             ProgressView()
-            Text("Scanning Library…").foregroundStyle(.secondary)
+            Text("Scanning Library…")
+                .font(MoiraType.body())
+                .foregroundStyle(MoiraColor.textMuted)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
