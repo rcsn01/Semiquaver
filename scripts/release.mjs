@@ -9,6 +9,10 @@ import { compareSemver, latestSemverTag, parseSemver } from "./release-version.m
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 process.chdir(root);
+const gitHubCredentialArgs = [
+  "-c", "credential.https://github.com.helper=",
+  "-c", "credential.https://github.com.helper=!gh auth git-credential"
+];
 
 const args = new Set(process.argv.slice(2));
 if (args.has("--help")) {
@@ -56,7 +60,11 @@ if (capture("git", ["status", "--porcelain"])) {
   fail("Commit or discard all working-tree changes before releasing.");
 }
 
-run("git", ["fetch", "origin", "main", "--tags"], "Unable to refresh origin/main and release tags.");
+run(
+  "git",
+  [...gitHubCredentialArgs, "fetch", "origin", "main", "--tags"],
+  "Unable to refresh origin/main and release tags."
+);
 run(
   "git",
   ["merge-base", "--is-ancestor", "origin/main", "HEAD"],
@@ -90,7 +98,12 @@ run("git", ["tag", "-a", tag, "-m", `Semiquaver ${version}`], `Unable to create 
 console.log("Pushing main and the release tag...");
 const push = spawnSync(
   "git",
-  ["push", "--atomic", "origin", "refs/heads/main:refs/heads/main", `refs/tags/${tag}:refs/tags/${tag}`],
+  [
+    ...gitHubCredentialArgs,
+    "push", "--atomic", "origin",
+    "refs/heads/main:refs/heads/main",
+    `refs/tags/${tag}:refs/tags/${tag}`
+  ],
   { cwd: root, stdio: "inherit" }
 );
 if (push.error || push.status !== 0) {
