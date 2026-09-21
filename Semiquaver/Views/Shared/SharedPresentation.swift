@@ -12,7 +12,9 @@ private struct SemiquaverTabHeaderModifier: ViewModifier {
     let actionLabel: String?
     let action: (() -> Void)?
 
+    @ViewBuilder
     func body(content: Content) -> some View {
+        #if os(iOS)
         content
             .navigationTitle(title)
             .toolbarTitleDisplayMode(.inlineLarge)
@@ -28,6 +30,20 @@ private struct SemiquaverTabHeaderModifier: ViewModifier {
                     }
                 }
             }
+        #else
+        content
+            .navigationTitle(title)
+            .toolbar {
+                if let actionSystemImage, let action {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(action: action) {
+                            Image(systemName: actionSystemImage)
+                        }
+                        .accessibilityLabel(actionLabel ?? title)
+                    }
+                }
+            }
+        #endif
     }
 }
 

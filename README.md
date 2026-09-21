@@ -6,9 +6,13 @@ Semiquaver is a native SwiftUI music player for iOS and macOS. The Mac app index
 
 Both app targets link the shared `MoirasiaUI` token package through a local SwiftPM reference (`../../../packages/ui-swift`). That path resolves only while this repository sits at `apps/standalone/Semiquaver` inside the Moirasia monorepo — the same colocated-home assumption the Electron siblings make with their pnpm workspace links. A standalone clone of this repository will not build until the package reference is re-pointed.
 
-## Build the macOS App
+## macOS app
 
-The `Semiquaver-macOS` shared scheme targets macOS 15 or newer. From the project root:
+The `Semiquaver-macOS` scheme targets macOS 15 or newer.
+
+### Development build and launch
+
+From the Semiquaver project root:
 
 ```sh
 xcodebuild -project Semiquaver.xcodeproj \
@@ -16,10 +20,12 @@ xcodebuild -project Semiquaver.xcodeproj \
   -configuration Debug \
   -destination 'platform=macOS' \
   -derivedDataPath DerivedData-macOS \
-  build
+  build && open -n DerivedData-macOS/Build/Products/Debug/Semiquaver.app
 ```
 
-To create a Release archive suitable for signing/distribution:
+Alternatively, open `Semiquaver.xcodeproj`, select the `Semiquaver-macOS` scheme and **My Mac**, then press `⌘R`.
+
+### Release archive
 
 ```sh
 xcodebuild -project Semiquaver.xcodeproj \
@@ -30,86 +36,79 @@ xcodebuild -project Semiquaver.xcodeproj \
   archive
 ```
 
-The Mac target uses App Sandbox, app-scoped bookmarks, user-selected read/write access, and hardened runtime. It has bundle identifier `com.opense.Semiquaver.mac` and Music application-category metadata.
+The macOS target uses App Sandbox, app-scoped bookmarks, user-selected read/write access, and hardened runtime. Its bundle identifier is `com.opense.Semiquaver.mac`.
 
-## Building an IPA for SideStore
+## iOS app
 
-SideStore can install an unsigned `.ipa` and sign it during installation. For this project, the output is:
+The `Semiquaver` scheme currently requires iOS 26.4 or newer.
 
-```text
-build/Semiquaver.ipa
-```
+### Development build
 
-The app currently builds with:
+Open `Semiquaver.xcodeproj`, select the `Semiquaver` scheme and an iPhone simulator, then press `⌘R`.
 
-```text
-MinimumOSVersion = 26.4
-```
-
-Your iPhone must be running iOS 26.4 or newer unless the deployment target is lowered and the app is rebuilt.
-
-## How to Generate the IPA
-
-From the project root, build the iPhoneOS app without signing:
+To build from the command line:
 
 ```sh
-xcodebuild \
-  -project Semiquaver.xcodeproj \
+xcodebuild -project Semiquaver.xcodeproj \
+  -scheme Semiquaver \
+  -configuration Debug \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+### Build and install on a physical iPhone
+
+Connect the iPhone, ensure the project has a valid development signing team, then run:
+
+```sh
+xcodebuild -project Semiquaver.xcodeproj \
+  -scheme Semiquaver \
+  -destination 'platform=iOS,id=00008110-001655DE1E32801E' \
+  -configuration Debug \
+  -derivedDataPath DerivedData \
+  build
+
+xcrun devicectl device install app \
+  --device 00008110-001655DE1E32801E \
+  DerivedData/Build/Products/Debug-iphoneos/Semiquaver.app
+```
+
+The device ID above is specific to the currently configured iPhone. Use `xcrun devicectl list devices` and replace it when installing on another device.
+
+### Build an IPA for SideStore
+
+Build the unsigned iPhoneOS app:
+
+```sh
+xcodebuild -project Semiquaver.xcodeproj \
   -scheme Semiquaver \
   -configuration Release \
   -sdk iphoneos \
-  -destination generic/platform=iOS \
+  -destination 'generic/platform=iOS' \
   -derivedDataPath DerivedData \
   CODE_SIGNING_ALLOWED=NO \
   build
 ```
 
-This creates the app bundle here:
-
-```text
-DerivedData/Build/Products/Release-iphoneos/Semiquaver.app
-```
-
-Package that `.app` into the IPA layout expected by iOS sideloading tools:
+Package the resulting app bundle:
 
 ```sh
-mkdir -p /tmp/SemiquaverIPA/Payload
-ditto DerivedData/Build/Products/Release-iphoneos/Semiquaver.app /tmp/SemiquaverIPA/Payload/Semiquaver.app
-mkdir -p build
-cd /tmp/SemiquaverIPA
-zip -qry -FS -X /Users/mac/Syncthing/Projects/Semiquaver/build/Semiquaver.ipa Payload
+PROJECT_ROOT="$(pwd)"
+rm -rf /tmp/SemiquaverIPA
+mkdir -p /tmp/SemiquaverIPA/Payload build
+ditto \
+  DerivedData/Build/Products/Release-iphoneos/Semiquaver.app \
+  /tmp/SemiquaverIPA/Payload/Semiquaver.app
+(cd /tmp/SemiquaverIPA && zip -qry -FS -X "$PROJECT_ROOT/build/Semiquaver.ipa" Payload)
 ```
 
-The final file is:
+The finished IPA is:
 
 ```text
 build/Semiquaver.ipa
 ```
 
-Load this file in SideStore.
+Transfer that file to the iPhone and open it in SideStore. SideStore signs the IPA during installation.
 
-## IPA Packaging
-
-`Semiquaver.ipa` is a clean zip containing only the standard IPA payload:
-
-```text
-Payload/Semiquaver.app
-```
-
-It is made from this app bundle:
-
-```text
-DerivedData/Build/Products/Release-iphoneos/Semiquaver.app
-```
-
-The `zip -FS -X` packaging command removes stale archive entries and excludes macOS extended attributes and resource-fork metadata such as `__MACOSX/` and `._Info.plist`.
-
-## How to Get the IPA File
-
-After generating the IPA, get it from the project directory:
-
-```text
-/Users/mac/Syncthing/Projects/Semiquaver/build/Semiquaver.ipa
-```
-
-Because `build/` and `DerivedData/` are generated Xcode output directories, they are ignored by git and can be recreated with the commands above.
+The IPA contains only the standard payload at `Payload/Semiquaver.app`. The generated `build/` and `DerivedData/` directories are ignored by Git and can be recreated with these commands.
