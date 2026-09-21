@@ -1,0 +1,15 @@
+{
+  "name": "semiquaver",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native SwiftUI music player for iOS and macOS",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "package:release": "node scripts/package-release.mjs",
+    "release": "node scripts/release.mjs",
+    "test": "node --test scripts/*.test.mjs"
+  }
+}

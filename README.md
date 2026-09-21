@@ -112,3 +112,37 @@ build/Semiquaver.ipa
 Transfer that file to the iPhone and open it in SideStore. SideStore signs the IPA during installation.
 
 The IPA contains only the standard payload at `Payload/Semiquaver.app`. The generated `build/` and `DerivedData/` directories are ignored by Git and can be recreated with these commands.
+
+## Automated release packaging
+
+Semiquaver includes pnpm scripts for packaging both platform artifacts and publishing them to GitHub Releases. They require macOS, Xcode, Node.js 22 or newer, pnpm 10, and the GitHub CLI.
+
+Set the release version in `package.json`, then build both unsigned artifacts:
+
+```sh
+pnpm package:release
+```
+
+This creates:
+
+```text
+release/Semiquaver-<version>.ipa
+release/Semiquaver-<version>-mac-universal.dmg
+```
+
+SideStore signs the IPA during installation. The DMG is not Developer ID signed or notarized, so macOS may require explicit Gatekeeper approval.
+
+Preview the complete release flow without changing anything:
+
+```sh
+pnpm release --dry-run
+```
+
+Publish a release:
+
+```sh
+gh auth login
+pnpm release
+```
+
+The release command requires a clean `main` branch containing the latest `origin/main`. It builds both artifacts, writes SHA-256 checksum files, creates and pushes the `v<version>` tag, and uploads the IPA, DMG, and checksums to a generated GitHub Release.

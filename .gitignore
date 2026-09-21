@@ -9,6 +9,7 @@ xcuserdata/
 
 # Xcode generated files
 build/
+release/
 DerivedData/
 DerivedData-*/
 *.moved-aside
@@ -31,3 +32,4 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output/
+/.pi
