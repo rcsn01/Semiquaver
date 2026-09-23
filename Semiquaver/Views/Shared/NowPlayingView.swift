@@ -65,11 +65,8 @@ struct NowPlayingView: View {
                 .tracking(0.5)
                 .foregroundStyle(MoiraColor.textMuted)
             Spacer()
-            HStack(spacing: 12) {
-                headerButton(systemImage: "trash", foregroundColor: MoiraColor.dangerAction) {
-                    showDeleteConfirmation = true
-                }
-                headerButton(systemImage: "list.bullet") { showQueue = true }
+            headerButton(systemImage: "trash", foregroundColor: MoiraColor.dangerAction) {
+                showDeleteConfirmation = true
             }
             .frame(width: 100, alignment: .trailing)
         }
@@ -113,12 +110,6 @@ struct NowPlayingView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(foregroundColor)
                 .frame(width: 44, height: 44)
-                .background(MoiraColor.control)
-                .overlay {
-                    RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous)
-                        .stroke(MoiraColor.border, lineWidth: 0.5)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.control, style: .continuous))
         }
         .buttonStyle(PressScaleButtonStyle())
     }

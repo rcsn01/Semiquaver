@@ -101,13 +101,8 @@ struct ContentView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 8) {
-                if model.player.currentTrack != nil {
-                    Button { showNowPlaying = true } label: {
-                        MiniPlayerContent(player: model.player)
-                            .padding(.horizontal, 14).padding(.vertical, 10)
-                            .background(MoiraColor.surfaceRaised, in: RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous))
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
+                IOSNowPlayingBar(player: model.player, playlists: model.playlists) {
+                    showNowPlaying = true
                 }
 
                 SemiquaverGlassSelectionBar(Tab.allCases, selection: $selectedTab) { tab, isSelected in
@@ -278,6 +273,92 @@ private struct IOSExpandedShell: View {
         case .artist: library.tracksByArtist[group.title] ?? []
         case .album: library.tracksByAlbumID[String(group.id.dropFirst("album::".count))] ?? []
         case .genre: []
+        }
+    }
+}
+
+private struct IOSNowPlayingBar: View {
+    @ObservedObject var player: AudioPlayerController
+    @ObservedObject var playlists: PlaylistStorage
+    let openNowPlaying: () -> Void
+
+    var body: some View {
+        if let track = player.currentTrack {
+            HStack(spacing: 8) {
+                Button(action: openNowPlaying) {
+                    HStack(spacing: 10) {
+                        ArtworkView(data: track.artworkData, seed: track.id, size: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(track.title)
+                                .font(MoiraType.body(weight: .semibold))
+                                .lineLimit(1)
+                            Text(track.artist)
+                                .font(MoiraType.small(weight: .medium))
+                                .foregroundStyle(MoiraColor.textMuted)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Now Playing: \(track.title) by \(track.artist)")
+                .accessibilityHint("Opens the full player")
+
+                Menu {
+                    playlistActions(for: track)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(MoiraColor.textPrimary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add to Playlist")
+                .accessibilityHint("Choose a playlist for \(track.title)")
+
+                Button { player.togglePlayPause() } label: {
+                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(MoiraColor.textPrimary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                MoiraColor.surfaceRaised,
+                in: RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: MoiraRadius.panel, style: .continuous)
+                    .stroke(MoiraColor.border, lineWidth: 0.5)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func playlistActions(for track: AudioTrack) -> some View {
+        if playlists.playlists.isEmpty {
+            Button("No playlists available") { }
+                .disabled(true)
+        } else {
+            ForEach(playlists.playlists) { playlist in
+                if playlists.isTrackInPlaylist(track.id, playlist: playlist) {
+                    Button("Remove from \(playlist.title)") {
+                        playlists.removeTrack(track.id, from: playlist)
+                    }
+                } else {
+                    Button("Add to \(playlist.title)") {
+                        playlists.addTrack(track.id, to: playlist)
+                    }
+                }
+            }
         }
     }
 }

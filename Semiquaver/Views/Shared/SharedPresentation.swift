@@ -182,8 +182,10 @@ struct TrackRow: View {
         }
         .frame(minHeight: layoutMode.rowHeight)
         .padding(.horizontal, MoiraSpace.x2)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(isCurrent ? MoiraColor.controlSelected : .clear)
         .clipShape(RoundedRectangle(cornerRadius: MoiraRadius.card, style: .continuous))
+        .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(track.title), \(track.artist), \(track.album), \(track.durationText)")
     }

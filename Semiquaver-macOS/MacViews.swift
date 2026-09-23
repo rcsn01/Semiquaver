@@ -160,10 +160,14 @@ private struct MacTrackList: View {
 
     var body: some View {
         List(tracks) { track in
-            TrackRow(track: track, isCurrent: player.isCurrentTrack(track), isPlaying: player.isPlaying, layoutMode: .expanded)
-                .contentShape(Rectangle())
-                .onTapGesture(count: 2) { player.play(track: track, in: tracks, context: context) }
-                .contextMenu { actions(for: track) }
+            MacTrackRow(
+                track: track,
+                isCurrent: player.isCurrentTrack(track),
+                isPlaying: player.isPlaying
+            ) {
+                player.play(track: track, in: tracks, context: context)
+            }
+            .contextMenu { actions(for: track) }
         }
         .navigationTitle(title)
         .overlay {
@@ -195,6 +199,28 @@ private struct MacTrackList: View {
         Divider()
         Button("Reveal in Finder", systemImage: "folder") { model.reveal(track) }
         Button("Move to Trash", systemImage: "trash", role: .destructive) { model.requestTrash(track) }
+    }
+}
+
+private struct MacTrackRow: View {
+    let track: AudioTrack
+    let isCurrent: Bool
+    let isPlaying: Bool
+    let play: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: play) {
+            TrackRow(track: track, isCurrent: isCurrent, isPlaying: isPlaying)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    isHovered ? MoiraColor.controlHover : .clear,
+                    in: RoundedRectangle(cornerRadius: MoiraRadius.card, style: .continuous)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
     }
 }
 
