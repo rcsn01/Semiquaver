@@ -32,26 +32,40 @@ final class MusicFolderStore: ObservableObject {
     @Published private(set) var record: MusicFolderRecord?
     private let fileManager: FileManager
     private let storageURL: URL
+    private let fileExistsAtPath: (String) -> Bool
+    private let startAccessing: (URL) -> Bool
+    private let stopAccessing: (URL) -> Void
     private var scopedURL: URL?
 
-    init(fileManager: FileManager = .default, storageURL: URL? = nil) {
+    init(
+        fileManager: FileManager = .default,
+        storageURL: URL? = nil,
+        fileExistsAtPath: ((String) -> Bool)? = nil,
+        startAccessing: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
+        stopAccessing: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() }
+    ) {
         self.fileManager = fileManager
         self.storageURL = storageURL ?? Self.applicationSupportURL(fileManager: fileManager)
             .appendingPathComponent("music-folder.json")
+        self.fileExistsAtPath = fileExistsAtPath ?? { fileManager.fileExists(atPath: $0) }
+        self.startAccessing = startAccessing
+        self.stopAccessing = stopAccessing
         load()
     }
 
     deinit {
-        scopedURL?.stopAccessingSecurityScopedResource()
+        if let scopedURL { stopAccessing(scopedURL) }
     }
 
-    func set(_ rawURL: URL) throws {
-        let url = rawURL.standardizedFileURL.resolvingSymlinksInPath()
+    func set(_ url: URL) throws {
+        // Keep the exact URL returned by the document picker. On iOS, making
+        // a standardized or symlink-resolved copy drops its security scope,
+        // so a bookmark made from that copy cannot restore access on relaunch.
         // The return value is legitimately false for non-security-scoped URLs
         // (e.g. plain test fixtures); only balance a successful start.
-        let started = url.startAccessingSecurityScopedResource()
+        let started = startAccessing(url)
         defer {
-            if started { url.stopAccessingSecurityScopedResource() }
+            if started { stopAccessing(url) }
         }
 
         let bookmark: Data
@@ -61,7 +75,7 @@ final class MusicFolderStore: ObservableObject {
             throw MusicFolderError.bookmarkCreation(url.path)
         }
 
-        scopedURL?.stopAccessingSecurityScopedResource()
+        if let scopedURL { stopAccessing(scopedURL) }
         scopedURL = nil
         record = MusicFolderRecord(
             bookmark: bookmark,
@@ -81,7 +95,12 @@ final class MusicFolderStore: ObservableObject {
         var stale = false
         let url: URL
         do {
-            url = try URL(resolvingBookmarkData: record.bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &stale)
+            url = try URL(
+                resolvingBookmarkData: record.bookmark,
+                options: [.withoutImplicitStartAccessing],
+                relativeTo: nil,
+                bookmarkDataIsStale: &stale
+            )
         } catch {
             record.status = .permissionRequired
             self.record = record
@@ -89,7 +108,12 @@ final class MusicFolderStore: ObservableObject {
             return nil
         }
 
-        guard fileManager.fileExists(atPath: url.path) else {
+        // A bookmark restored after relaunch does not grant filesystem access
+        // until its security scope is opened. Checking first makes an existing
+        // external folder look missing and empties the library on startup.
+        let started = startAccessing(url)
+        guard fileExistsAtPath(url.path) else {
+            if started { stopAccessing(url) }
             record.status = .unavailable
             record.lastKnownPath = url.path
             self.record = record
@@ -97,9 +121,8 @@ final class MusicFolderStore: ObservableObject {
             return nil
         }
 
-        _ = url.startAccessingSecurityScopedResource()
-        scopedURL?.stopAccessingSecurityScopedResource()
-        scopedURL = url
+        if let scopedURL { stopAccessing(scopedURL) }
+        scopedURL = started ? url : nil
 
         record.status = .available
         record.lastKnownPath = url.path
@@ -112,7 +135,7 @@ final class MusicFolderStore: ObservableObject {
     }
 
     func clear() {
-        scopedURL?.stopAccessingSecurityScopedResource()
+        if let scopedURL { stopAccessing(scopedURL) }
         scopedURL = nil
         record = nil
         save()

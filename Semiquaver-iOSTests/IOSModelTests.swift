@@ -36,6 +36,54 @@ final class IOSModelTests: XCTestCase {
     }
 
     @MainActor
+    func testMusicFolderStoreStartsSecurityScopeBeforeCheckingRelaunchedFolder() throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let folder = fixture.appendingPathComponent("Music")
+        let storageURL = fixture.appendingPathComponent("music-folder.json")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+        let bookmark = try folder.bookmarkData(includingResourceValuesForKeys: nil, relativeTo: nil)
+        let record = MusicFolderRecord(
+            bookmark: bookmark,
+            displayName: "Music",
+            lastKnownPath: folder.path,
+            status: .available
+        )
+        try JSONEncoder().encode(record).write(to: storageURL)
+
+        var scopeIsOpen = false
+        let store = MusicFolderStore(
+            storageURL: storageURL,
+            fileExistsAtPath: { _ in scopeIsOpen },
+            startAccessing: { _ in scopeIsOpen = true; return true },
+            stopAccessing: { _ in scopeIsOpen = false }
+        )
+
+        XCTAssertEqual(store.resolve()?.standardizedFileURL, folder.standardizedFileURL)
+        XCTAssertEqual(store.record?.status, .available)
+    }
+
+    @MainActor
+    func testMusicFolderStoreBookmarksTheOriginalSecurityScopedURL() throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let folder = fixture.appendingPathComponent("Music")
+        let pickedURL = fixture.appendingPathComponent("Picked Music")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: pickedURL, withDestinationURL: folder)
+
+        var accessedURL: URL?
+        let store = MusicFolderStore(
+            storageURL: fixture.appendingPathComponent("music-folder.json"),
+            startAccessing: { url in accessedURL = url; return false }
+        )
+        try store.set(pickedURL)
+
+        XCTAssertEqual(accessedURL, pickedURL)
+    }
+
+    @MainActor
     func testMusicFolderStorePersistsAndClears() throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture) }
@@ -85,6 +133,47 @@ final class IOSModelTests: XCTestCase {
         try FileManager.default.removeItem(at: audioURL)
         await library.reload(force: true)
         XCTAssertTrue(library.tracks.isEmpty)
+    }
+
+    @MainActor
+    func testScannedLibrarySurvivesAppRelaunch() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let folder = fixture.appendingPathComponent("Music")
+        let storageURL = fixture.appendingPathComponent("music-folder.json")
+        let cacheURL = fixture.appendingPathComponent("library-cache.json")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try silentWAV().write(to: folder.appendingPathComponent("One.wav"))
+
+        let firstStore = MusicFolderStore(storageURL: storageURL)
+        do {
+            try firstStore.set(folder)
+        } catch {
+            throw XCTSkip("Bookmark creation isn't available in this test host: \(error)")
+        }
+        let firstLibrary = AppMusicLibrary(cacheURL: cacheURL)
+        let firstModel = IOSAppModel(
+            player: AudioPlayerController(),
+            library: firstLibrary,
+            playlists: PlaylistStorage(fileURL: fixture.appendingPathComponent("playlists.json")),
+            folderStore: firstStore
+        )
+        await firstModel.start()
+        XCTAssertEqual(firstLibrary.tracks.count, 1)
+
+        let relaunchedLibrary = AppMusicLibrary(cacheURL: cacheURL)
+        let relaunchedModel = IOSAppModel(
+            player: AudioPlayerController(),
+            library: relaunchedLibrary,
+            playlists: PlaylistStorage(fileURL: fixture.appendingPathComponent("playlists.json")),
+            folderStore: MusicFolderStore(storageURL: storageURL)
+        )
+        await relaunchedModel.start()
+
+        XCTAssertTrue(relaunchedLibrary.folderConfigured)
+        XCTAssertEqual(relaunchedLibrary.folderName, "Music")
+        XCTAssertNil(relaunchedLibrary.errorMessage)
+        XCTAssertEqual(relaunchedLibrary.tracks.map(\.title), ["One"])
     }
 
     @MainActor

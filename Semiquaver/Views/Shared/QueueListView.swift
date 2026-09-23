@@ -12,15 +12,11 @@ struct QueueListView: View {
                 // Now Playing Section
                 Section {
                     if let currentTrack = player.currentTrack {
-                        MediaRow(
-                            item: currentTrack.mediaItem(
-                                isCurrent: true,
-                                isPlaying: player.isPlaying
-                            ),
-                            trailingSystemImage: player.isPlaying ? "pause.fill" : "play.fill",
-                            isHighlighted: false
+                        TrackRow(
+                            track: currentTrack,
+                            isCurrent: true,
+                            isPlaying: player.isPlaying
                         )
-                        .listRowBackground(MoiraColor.controlSelected)
                     } else {
                         Text("Nothing playing")
                             .font(MoiraType.body())
@@ -40,9 +36,7 @@ struct QueueListView: View {
                 if !player.playbackHistory.isEmpty {
                     Section {
                         ForEach(player.playbackHistory) { track in
-                            MediaRow(
-                                item: track.mediaItem(isCurrent: false, isPlaying: false)
-                            )
+                            TrackRow(track: track)
                             .padding(.vertical, 4)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button {
@@ -72,9 +66,7 @@ struct QueueListView: View {
                             .foregroundStyle(MoiraColor.textMuted)
                     } else {
                         ForEach(Array(player.playbackQueue.enumerated()), id: \.element.id) { index, track in
-                            MediaRow(
-                                item: track.mediaItem(isCurrent: false, isPlaying: false)
-                            )
+                            TrackRow(track: track)
                             .padding(.vertical, 4)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {

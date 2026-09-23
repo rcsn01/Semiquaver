@@ -37,7 +37,6 @@ struct AudioTabView: View {
                 reloadLibrary()
             }
         }
-        .searchable(text: $searchText, prompt: "Songs, artists, albums, genres")
         .fileImporter(
             isPresented: $showFolderPicker,
             allowedContentTypes: [UTType.folder],
@@ -89,6 +88,10 @@ struct AudioTabView: View {
             case .artists, .albums:
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 0) {
+                        librarySearchField
+                            .padding(.horizontal, 4)
+                            .padding(.bottom, 8)
+
                         switch selectedCategory {
                         case .artists:
                             artistRows(for: LibrarySearch.groups(
@@ -112,6 +115,11 @@ struct AudioTabView: View {
                 }
             case .all:
                 List {
+                    librarySearchField
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+
                     songRows(for: LibrarySearch.tracks(library.songs, matching: searchText))
                 }
                 .listStyle(.plain)
@@ -124,6 +132,34 @@ struct AudioTabView: View {
     }
 
     // MARK: - Rows
+
+    private var librarySearchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(MoiraColor.textMuted)
+
+            TextField("Songs, artists, albums, genres", text: $searchText)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !searchText.isEmpty {
+                Button("Clear search", systemImage: "xmark.circle.fill") {
+                    searchText = ""
+                }
+                .labelStyle(.iconOnly)
+                .foregroundStyle(MoiraColor.textMuted)
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 44)
+        .background(MoiraColor.surfaceRaised, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(MoiraColor.border, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
 
     private func artistRows(for summaries: [AudioGroupSummary]) -> some View {
         ForEach(summaries) { summary in
@@ -189,13 +225,10 @@ struct AudioTabView: View {
                         showNowPlayingFullScreen = true
                     }
                 } label: {
-                    MediaRow(
-                        item: track.mediaItem(
-                            isCurrent: player.isCurrentTrack(track),
-                            isPlaying: player.isPlaying
-                        ),
-                        trailingSystemImage: trailingImage(for: track),
-                        isHighlighted: player.isCurrentTrack(track)
+                    TrackRow(
+                        track: track,
+                        isCurrent: player.isCurrentTrack(track),
+                        isPlaying: player.isPlaying
                     )
                     .padding(.horizontal, 4)
                 }
@@ -226,7 +259,7 @@ struct AudioTabView: View {
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+            .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
             .swipeActions(edge: .leading) {
                 Button {
                     player.addToQueue(track)
@@ -235,15 +268,6 @@ struct AudioTabView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Helpers
-
-    private func trailingImage(for track: AudioTrack) -> String? {
-        if player.isCurrentTrack(track) {
-            return player.isPlaying ? "pause.fill" : "play.fill"
-        }
-        return nil
     }
 
     // MARK: - States

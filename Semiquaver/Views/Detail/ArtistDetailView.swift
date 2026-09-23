@@ -95,13 +95,10 @@ struct ArtistDetailView: View {
                         showNowPlayingFullScreen = true
                     }
                 } label: {
-                    MediaRow(
-                        item: track.mediaItem(
-                            isCurrent: player.isCurrentTrack(track),
-                            isPlaying: player.isPlaying
-                        ),
-                        trailingSystemImage: trailingImage(for: track),
-                        isHighlighted: player.isCurrentTrack(track)
+                    TrackRow(
+                        track: track,
+                        isCurrent: player.isCurrentTrack(track),
+                        isPlaying: player.isPlaying
                     )
                     .padding(.horizontal, 4)
                 }
@@ -115,7 +112,7 @@ struct ArtistDetailView: View {
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+            .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
             .swipeActions(edge: .leading) {
                 Button {
                     player.addToQueue(track)
@@ -126,10 +123,4 @@ struct ArtistDetailView: View {
         }
     }
 
-    private func trailingImage(for track: AudioTrack) -> String? {
-        if player.isCurrentTrack(track) {
-            return player.isPlaying ? "pause.fill" : "play.fill"
-        }
-        return nil
-    }
 }

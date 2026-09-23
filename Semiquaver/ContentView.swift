@@ -239,7 +239,7 @@ private struct IOSExpandedShell: View {
     private func trackList(_ tracks: [AudioTrack], title: String, context: PlaybackContext) -> some View {
         List(tracks) { track in
             Button { player.play(track: track, in: tracks, context: context) } label: {
-                TrackRow(track: track, isCurrent: player.isCurrentTrack(track), isPlaying: player.isPlaying, layoutMode: .expanded)
+                TrackRow(track: track, isCurrent: player.isCurrentTrack(track), isPlaying: player.isPlaying)
             }
             .buttonStyle(.plain)
             .swipeActions(edge: .leading) { Button("Queue") { player.addToQueue(track) } }
