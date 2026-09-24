@@ -59,22 +59,28 @@ xcodebuild -project Semiquaver.xcodeproj \
 
 ### Build and install on a physical iPhone
 
-Connect the iPhone, ensure the project has a valid development signing team, then run:
+Pair the iPhone with the Mac over USB, unlock it, and tap **Trust** if prompted. Enable **Developer Mode** if prompted. For wireless installs after pairing, select the iPhone in Xcode's **Window → Devices and Simulators** and enable **Connect via network**. The iPhone must be reachable; `xcrun devicectl list devices` should show it as `available`.
+
+Sign in to Xcode with an Apple Account that can use the development team configured for this project. The iPhone must run iOS 26.4 or newer. List paired devices, then enter the identifier shown next to Ivn's iPhone:
 
 ```sh
+xcrun devicectl list devices
+printf "Enter Target identifier: "
+read -r DEVICE
+
 xcodebuild -project Semiquaver.xcodeproj \
   -scheme Semiquaver \
-  -destination 'platform=iOS,id=00008110-001655DE1E32801E' \
+  -destination "platform=iOS,id=$DEVICE" \
   -configuration Debug \
   -derivedDataPath DerivedData \
+  -allowProvisioningUpdates \
+  -allowProvisioningDeviceRegistration \
   build
 
 xcrun devicectl device install app \
-  --device 00008110-001655DE1E32801E \
+  --device "$DEVICE" \
   DerivedData/Build/Products/Debug-iphoneos/Semiquaver.app
 ```
-
-The device ID above is specific to the currently configured iPhone. Use `xcrun devicectl list devices` and replace it when installing on another device.
 
 ### Build an IPA for SideStore
 
