@@ -65,7 +65,7 @@ Sign in to Xcode with an Apple Account that can use the development team configu
 
 ```sh
 xcrun devicectl list devices
-printf "Enter Target identifier: "
+printf "Enter target identifier: "
 read -r DEVICE
 
 xcodebuild -project Semiquaver.xcodeproj \
